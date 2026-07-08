@@ -20,7 +20,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+      const body = await response.json().catch(() => null)
+      const message = body && typeof body === 'object' && 'message' in body ? String(body.message) : null
+      throw new Error(message || `HTTP ${response.status}`)
     }
 
     return (await response.json()) as T

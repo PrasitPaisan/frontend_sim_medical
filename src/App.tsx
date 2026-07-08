@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Button, ConfigProvider, Layout, Menu, Typography, theme } from 'antd'
 import {
+  ApartmentOutlined,
   ApiOutlined,
   AuditOutlined,
   DashboardOutlined,
   ExperimentOutlined,
+  FormOutlined,
+  MedicineBoxOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   ToolOutlined,
@@ -15,6 +18,9 @@ import PrescriptionPage from './pages/PrescriptionPage'
 import ProcessTrackingPage from './pages/ProcessTrackingPage'
 import MachineInventoryPage from './pages/MachineInventoryPage'
 import MachineSimPage from './pages/MachineSimPage'
+import AddMedicinePage from './pages/AddMedicinePage'
+import PrescribeMedicinePage from './pages/PrescribeMedicinePage'
+import AddDepartmentPage from './pages/AddDepartmentPage'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -26,6 +32,8 @@ function App() {
 
   const renderPage = () => {
     switch (activePage) {
+      case 'prescribe':
+        return <PrescribeMedicinePage />
       case 'prescription':
         return <PrescriptionPage />
       case 'process':
@@ -34,6 +42,10 @@ function App() {
         return <MachineInventoryPage />
       case 'machine-sim':
         return <MachineSimPage />
+      case 'add-medicine':
+        return <AddMedicinePage />
+      case 'add-department':
+        return <AddDepartmentPage />
       default:
         return <MonitorQueuePage />
     }
@@ -88,10 +100,13 @@ function App() {
             onClick={({ key }) => setActivePage(key)}
             items={[
               { key: 'monitor', icon: <DashboardOutlined />, label: 'Monitor Queue' },
+              { key: 'prescribe', icon: <FormOutlined />, label: 'Prescribe Medicine' },
               { key: 'prescription', icon: <ExperimentOutlined />, label: 'Prescription Managements' },
               { key: 'process', icon: <AuditOutlined />, label: 'Process Tracking' },
               { key: 'inventory', icon: <ToolOutlined />, label: 'Machine Inventory' },
               { key: 'machine-sim', icon: <ApiOutlined />, label: 'Machine Sim' },
+              { key: 'add-medicine', icon: <MedicineBoxOutlined />, label: 'Add Medicine to Machine' },
+              { key: 'add-department', icon: <ApartmentOutlined />, label: 'Add Department' },
             ]}
             style={{ background: 'transparent', border: 'none', color: '#fff' }}
           />
@@ -103,10 +118,13 @@ function App() {
               <Text type="secondary">Clinical Operations</Text>
               <Title level={3} style={{ margin: '4px 0 0' }}>
                 {activePage === 'monitor' && 'Monitor Queue'}
+                {activePage === 'prescribe' && 'Prescribe Medicine'}
                 {activePage === 'prescription' && 'Prescription Managements'}
                 {activePage === 'process' && 'Process Tracking'}
                 {activePage === 'inventory' && 'Machine Inventory'}
                 {activePage === 'machine-sim' && 'Machine Sim'}
+                {activePage === 'add-medicine' && 'Add Medicine to Machine'}
+                {activePage === 'add-department' && 'Add Department'}
               </Title>
             </div>
           </Header>

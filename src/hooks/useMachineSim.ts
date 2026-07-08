@@ -6,12 +6,12 @@ export type AdvanceStateResult = {
 }
 
 export function useMachineSim() {
-  const advanceState = async (prescriptionhisid: string, state: number): Promise<AdvanceStateResult> => {
+  const advanceState = async (prescriptionhisid: string, station: number): Promise<AdvanceStateResult> => {
     try {
-      await api.post('/prescriptions/advance-state', { prescriptionhisid, state })
-      return { ok: true, message: `${prescriptionhisid} updated to state ${state}` }
+      await api.post('/prescriptions/advance-station', { prescriptionhisid, station })
+      return { ok: true, message: `${prescriptionhisid} advanced to station ${station}` }
     } catch (err) {
-      return { ok: false, message: err instanceof Error ? err.message : 'Failed to update state' }
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to advance station' }
     }
   }
 

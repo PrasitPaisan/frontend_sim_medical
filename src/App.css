@@ -278,6 +278,15 @@ body {
   font-weight: 600;
 }
 
+.prescription-card--complete {
+  opacity: 0.75;
+}
+
+.prescription-card__badge--complete {
+  background: #e6f7ee;
+  color: #2f9e5b;
+}
+
 .prescription-details {
   margin-top: 12px;
   padding: 12px;
@@ -386,10 +395,23 @@ body {
 .station-stepper__node--active {
   border-color: #3874FF;
   color: #3874FF;
-  box-shadow: 0 0 0 4px rgba(56, 116, 255, 0.15);
+  animation: station-pulse 1.6s ease-out infinite;
+}
+
+@keyframes station-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(56, 116, 255, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(56, 116, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(56, 116, 255, 0);
+  }
 }
 
 .station-stepper__connector {
+  position: relative;
   height: 2px;
   background: #dce7ee;
 }
@@ -400,6 +422,51 @@ body {
 
 .station-stepper__connector--done {
   background: #3874FF;
+}
+
+/* Basket "in transit" toward the next station. This connector div is only
+   half the gap between two node centers (each step has its own left/right
+   half, split so the node stays centered) — so the icon has to travel 200%
+   of *this* connector's width, not 100%, to actually reach the next node
+   instead of stalling at the midpoint. Nothing here clips overflow, so it's
+   free to visually cross into the node and the next step's connector. */
+.station-stepper__basket-icon {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: flex;
+  transform: translate(-50%, -50%);
+  animation: station-basket-flow 6s ease-in-out infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(56, 116, 255, 0.25));
+}
+
+@keyframes station-basket-flow {
+  0% {
+    left: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 200%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .station-stepper__node--active {
+    animation: none;
+  }
+  .station-stepper__basket-icon {
+    animation: none;
+    left: 100%;
+    opacity: 1;
+  }
 }
 
 .station-stepper__label {
@@ -414,6 +481,12 @@ body {
 
 .station-stepper__label span {
   color: #6c7d8a;
+}
+
+.machine-sim-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 .machine-sim-grid {
@@ -445,6 +518,22 @@ body {
   font-size: 13px;
 }
 
+.machine-sim-card__baskets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.machine-sim-card__basket-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: disc;
+  color: #42515e;
+  font-size: 12px;
+  max-height: 90px;
+  overflow-y: auto;
+}
+
 .machine-sim-card__controls {
   display: flex;
   gap: 8px;
@@ -466,4 +555,126 @@ body {
   color: #6c7d8a;
   text-align: center;
   background: rgba(248, 251, 253, 0.8);
+}
+
+.monitor-queue-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.monitor-queue-card {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: 22px 32px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e3ecf3;
+  box-shadow: 0 6px 18px rgba(56, 116, 255, 0.06);
+}
+
+.monitor-queue-card--next {
+  border-color: #3874ff;
+  box-shadow: 0 10px 28px rgba(56, 116, 255, 0.22);
+}
+
+.monitor-queue-card__window {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  padding: 14px 22px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3874ff 0%, #5996ff 100%);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.monitor-queue-card__window-label {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.monitor-queue-card__window-number {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.monitor-queue-card__patient {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.monitor-queue-card__patient strong {
+  font-size: 26px;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monitor-queue-card__patient span {
+  font-size: 16px;
+  color: #6c7d8a;
+}
+
+.medicine-form__target-machine {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3874ff 0%, #5996ff 100%);
+  box-shadow: 0 8px 22px rgba(56, 116, 255, 0.25);
+}
+
+.medicine-form__target-machine .ant-form-item-label > label {
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.medicine-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4px 16px;
+}
+
+.medicine-list__subtext {
+  color: #6c7d8a;
+  font-size: 12px;
+}
+
+.prescribe-order__drug-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e3ecf3;
+  border-radius: 12px;
+  background: rgba(248, 251, 253, 0.6);
+}
+
+.prescribe-order__drug-row .ant-form-item {
+  margin-bottom: 0;
+}
+
+.prescribe-order__drug-row-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.prescribe-order__drug-row-extra .ant-form-item {
+  margin-bottom: 0;
 }

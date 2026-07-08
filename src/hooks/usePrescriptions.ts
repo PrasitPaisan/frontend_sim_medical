@@ -9,6 +9,11 @@ type PrescriptionDetail = {
   medicineheteromorphism: number
   medicinenamech: string
   medfactoryname: string
+  // From medicine_dictionary, joined by medhisid/medunit/medfactoryname — null
+  // if this medicine hasn't been added to the machine's catalog yet.
+  typeunit: string | null
+  hpmtypeunit: string | null
+  dispense_type: string | null
 }
 
 type PrescriptionItem = {

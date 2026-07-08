@@ -24,7 +24,7 @@ export default function PrescriptionCard({ item, isActive, onSelect, isSelectedF
           onClick={(event) => event.stopPropagation()}
         />
       }
-      headerEnd={<span className="prescription-card__badge">State {item.pre_state}</span>}
+      headerEnd={<span className="prescription-card__badge">Received</span>}
     >
       {isActive ? (
         <div className="prescription-details">
