@@ -1,5 +1,6 @@
 import { CheckOutlined } from '@ant-design/icons'
 import type { StationProgress } from '../../lib/stations'
+import BasketIcon from './BasketIcon'
 
 type StationStepperProps = {
   stations: StationProgress[]
@@ -26,14 +27,22 @@ export default function StationStepper({ stations }: StationStepperProps) {
               <div className={`station-stepper__node station-stepper__node--${station.status}`}>
                 {station.status === 'done' ? <CheckOutlined /> : station.state}
               </div>
+              {/* While a station is active, ride a little basket along the
+                  connector heading to the next one — it's in transit there. */}
               <div
                 className={`station-stepper__connector ${isLast ? 'station-stepper__connector--hidden' : ''} ${
                   station.status === 'done' ? 'station-stepper__connector--done' : ''
                 }`}
-              />
+              >
+                {station.status === 'active' && !isLast ? (
+                  <span className="station-stepper__basket-icon" aria-hidden="true">
+                    <BasketIcon />
+                  </span>
+                ) : null}
+              </div>
             </div>
             <div className="station-stepper__label">
-              <strong>{isLast ? station.labelEn : `Station ${station.state}: ${station.labelEn}`}</strong>
+              <strong>{station.labelEn}</strong>
               <span>{station.labelTh}</span>
             </div>
           </div>

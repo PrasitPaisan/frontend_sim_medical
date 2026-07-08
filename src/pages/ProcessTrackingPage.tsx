@@ -7,7 +7,7 @@ export default function ProcessTrackingPage() {
   const { prescriptions, loading, error } = useTrackedPrescriptions()
 
   return (
-    <PageShell title="Process Tracking" subtitle="Track ordered prescriptions across dispensing stations">
+    <PageShell title="Process Tracking" subtitle="Track prescriptions across dispensing stations, including completed ones">
       {error && (
         <div className="placeholder-card" style={{ marginBottom: 12 }}>
           <strong>Unable to load tracked prescriptions:</strong> {error}
