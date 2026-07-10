@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# frontend_sim
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite + antd frontend for the pharmacy dispensing automation console — the console pharmacists use to manage prescriptions, medicines, and departments, and to track them through the dispensing pipeline. Talks to the `backend-sim` API; not a standalone app.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js + npm
+- A running instance of `backend-sim` (see its own README) — reachable at the URL you'll set below
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Expanding the Oxlint configuration
+2. Copy the env template and fill it in:
+   ```bash
+   cp .env.example .env
+   ```
+   - `VITE_API_BASE_URL` — must match the backend's actual `PORT` (e.g. `http://localhost:3001`).
+   - `VITE_API_TIMEOUT` — request timeout in ms.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+3. Run it:
+   ```bash
+   npm run dev
+   ```
+   Vite bumps the port if `5173` is already taken — check the terminal output for the actual URL.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+## Scripts
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `npm run dev` — dev server
+- `npm run build` — `tsc -b && vite build` (typecheck is part of the build)
+- `npm run lint` — oxlint
+- `npm run preview` — preview a production build locally
+- `npx tsc -b` — typecheck only
+
+There is no test runner configured (no test script, no test framework installed).
