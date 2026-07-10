@@ -27,6 +27,7 @@ export default function DepartmentList({ departments, loading }: DepartmentListP
       columns={columns}
       pagination={{ pageSize: 10 }}
       locale={{ emptyText: 'No departments added yet' }}
+      scroll={{ x: 'max-content' }}
     />
   )
 }
