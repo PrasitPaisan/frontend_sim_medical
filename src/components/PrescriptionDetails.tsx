@@ -54,6 +54,7 @@ export default function PrescriptionDetails({ details }: PrescriptionDetailsProp
         columns={columns}
         pagination={false}
         locale={{ emptyText: 'No medicines' }}
+        scroll={{ x: 'max-content' }}
       />
     </div>
   )

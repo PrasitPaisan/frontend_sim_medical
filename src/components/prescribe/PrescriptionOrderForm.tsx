@@ -1,4 +1,4 @@
-import { Button, Collapse, Form, Input, InputNumber, Select, message } from 'antd'
+import { Button, Form, Input, InputNumber, Select, message } from 'antd'
 import { DeleteOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import type { Medicine } from '../../hooks/useMedicines'
 import type { Department } from '../../hooks/useDepartments'
@@ -327,40 +327,30 @@ export default function PrescriptionOrderForm({
         </Form.Item>
       </div>
 
-      <Collapse
-        style={{ marginTop: 16 }}
-        items={[
-          {
-            key: 'nzp360-header',
-            label: 'Additional fields for NZP360 (optional)',
-            children: (
-              <div className="medicine-form__grid">
-                <Form.Item name="patientbirthday" label="Patient Birthday">
-                  <Input placeholder="19330903" />
-                </Form.Item>
-                <Form.Item name="patientvisitid" label="Patient Visit ID">
-                  <Input placeholder="703662" />
-                </Form.Item>
-                <Form.Item name="patientbed" label="Bed">
-                  <Input placeholder="B15+" />
-                </Form.Item>
-                <Form.Item name="doctorid" label="Doctor ID">
-                  <Input placeholder="D1097" />
-                </Form.Item>
-                <Form.Item name="administration" label="Administration Route">
-                  <Input placeholder="Oral" />
-                </Form.Item>
-                <Form.Item name="repeatindicator" label="Repeat Indicator">
-                  <Input placeholder="1" />
-                </Form.Item>
-                <Form.Item name="deptcode" label="Department Code (from dictionary)">
-                  <Input disabled placeholder="Pick a department above" />
-                </Form.Item>
-              </div>
-            ),
-          },
-        ]}
-      />
+      <h4 style={{ marginTop: 24 }}>Additional fields for NZP360</h4>
+      <div className="medicine-form__grid">
+        <Form.Item name="patientbirthday" label="Patient Birthday">
+          <Input placeholder="19330903" />
+        </Form.Item>
+        <Form.Item name="patientvisitid" label="Patient Visit ID">
+          <Input placeholder="703662" />
+        </Form.Item>
+        <Form.Item name="patientbed" label="Bed">
+          <Input placeholder="B15+" />
+        </Form.Item>
+        <Form.Item name="doctorid" label="Doctor ID">
+          <Input placeholder="D1097" />
+        </Form.Item>
+        <Form.Item name="administration" label="Administration Route">
+          <Input placeholder="Oral" />
+        </Form.Item>
+        <Form.Item name="repeatindicator" label="Repeat Indicator">
+          <Input placeholder="1" />
+        </Form.Item>
+        <Form.Item name="deptcode" label="Department Code (from dictionary)">
+          <Input disabled placeholder="Pick a department above" />
+        </Form.Item>
+      </div>
 
       <h4 style={{ marginTop: 24 }}>Medicines</h4>
       <p className="medicine-list__subtext">Pick from the machine's medicine dictionary — matching fields autofill; quantity and hint still need to be entered by hand.</p>
@@ -408,52 +398,42 @@ export default function PrescriptionOrderForm({
                 </Form.Item>
                 <Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(name)} style={{ marginTop: 4 }} />
 
-                <Collapse
-                  style={{ width: '100%' }}
-                  items={[
-                    {
-                      key: 'nzp360-drug',
-                      label: 'Additional fields for NZP360 (optional)',
-                      children: (
-                        <div className="prescribe-order__drug-row-extra">
-                          <Form.Item name={[name, 'drugspec']} label="Drug Spec" style={{ flex: '1 1 140px' }}>
-                            <Input placeholder="0.2 mg * 10" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'drugpycode']} label="Drug PY Code" style={{ flex: '1 1 120px' }}>
-                            <Input placeholder="dxsyslzh" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'dosage']} label="Dosage" style={{ flex: '1 1 100px' }}>
-                            <Input placeholder="1.0" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'dosageunit']} label="Dosage Unit" style={{ flex: '1 1 100px' }}>
-                            <Input placeholder="Tablet" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'dosageperunit']} label="Dosage Per Unit" style={{ flex: '1 1 120px' }}>
-                            <Input placeholder="0.2" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'dispensingtime']} label="Dispensing Time" style={{ flex: '1 1 160px' }}>
-                            <Input placeholder="2017032909:44:30" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'performtime']} label="Perform Time" style={{ flex: '1 1 160px' }}>
-                            <Input placeholder="2017032900:00:00" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'performfreqdetail']} label="Perform Freq Detail" style={{ flex: '1 1 140px' }}>
-                            <Input placeholder="8-12-16-20" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'performfreq']} label="Perform Freq" style={{ flex: '1 1 140px' }}>
-                            <Input placeholder="4 times per day" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'performfreqprint']} label="Perform Freq Print" style={{ flex: '1 1 160px' }}>
-                            <Input placeholder="Morning-noon-night" />
-                          </Form.Item>
-                          <Form.Item name={[name, 'nursingcode']} label="Nursing Code" style={{ flex: '1 1 160px' }}>
-                            <Input placeholder="201703329091142" />
-                          </Form.Item>
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
+                <div className="prescribe-order__drug-row-extra-label">Additional fields for NZP360</div>
+                <div className="prescribe-order__drug-row-extra">
+                  <Form.Item name={[name, 'drugspec']} label="Drug Spec" style={{ flex: '1 1 140px' }}>
+                    <Input placeholder="0.2 mg * 10" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'drugpycode']} label="Drug PY Code" style={{ flex: '1 1 120px' }}>
+                    <Input placeholder="dxsyslzh" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'dosage']} label="Dosage" style={{ flex: '1 1 100px' }}>
+                    <Input placeholder="1.0" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'dosageunit']} label="Dosage Unit" style={{ flex: '1 1 100px' }}>
+                    <Input placeholder="Tablet" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'dosageperunit']} label="Dosage Per Unit" style={{ flex: '1 1 120px' }}>
+                    <Input placeholder="0.2" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'dispensingtime']} label="Dispensing Time" style={{ flex: '1 1 160px' }}>
+                    <Input placeholder="2017032909:44:30" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'performtime']} label="Perform Time" style={{ flex: '1 1 160px' }}>
+                    <Input placeholder="2017032900:00:00" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'performfreqdetail']} label="Perform Freq Detail" style={{ flex: '1 1 140px' }}>
+                    <Input placeholder="8-12-16-20" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'performfreq']} label="Perform Freq" style={{ flex: '1 1 140px' }}>
+                    <Input placeholder="4 times per day" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'performfreqprint']} label="Perform Freq Print" style={{ flex: '1 1 160px' }}>
+                    <Input placeholder="Morning-noon-night" />
+                  </Form.Item>
+                  <Form.Item name={[name, 'nursingcode']} label="Nursing Code" style={{ flex: '1 1 160px' }}>
+                    <Input placeholder="201703329091142" />
+                  </Form.Item>
+                </div>
               </div>
             ))}
             <Button type="dashed" icon={<PlusOutlined />} onClick={() => add()} block>

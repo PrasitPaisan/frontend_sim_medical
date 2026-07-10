@@ -67,6 +67,7 @@ export default function MedicineList({ medicines, loading }: MedicineListProps) 
       columns={columns}
       pagination={{ pageSize: 10 }}
       locale={{ emptyText: 'No medicines added to the machine yet' }}
+      scroll={{ x: 'max-content' }}
     />
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, ConfigProvider, Layout, Menu, Typography, theme } from 'antd'
 import {
   ApartmentOutlined,
@@ -9,6 +9,7 @@ import {
   FormOutlined,
   MedicineBoxOutlined,
   MenuFoldOutlined,
+  MenuOutlined,
   MenuUnfoldOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
@@ -25,10 +26,36 @@ import AddDepartmentPage from './pages/AddDepartmentPage'
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
 
+// Below this width the sider becomes an off-canvas overlay (see .app-sider's
+// @media block in App.css) instead of a permanent column, so it starts
+// collapsed there — otherwise the first paint on a phone is the sider
+// eating the whole screen before anyone touches the toggle.
+const MOBILE_BREAKPOINT = 768
+const isMobileViewport = () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT
+
 function App() {
   const [activePage, setActivePage] = useState('monitor')
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(isMobileViewport)
   const { token } = theme.useToken()
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (isMobileViewport()) {
+        setCollapsed(true)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handleNavigate = (key: string) => {
+    setActivePage(key)
+    // On the mobile overlay layout, picking a page should close the drawer
+    // too — on desktop this only ever runs if the sider was already open.
+    if (isMobileViewport()) {
+      setCollapsed(true)
+    }
+  }
 
   const renderPage = () => {
     switch (activePage) {
@@ -63,6 +90,14 @@ function App() {
       }}
     >
       <Layout className="app-shell">
+        {/* Off-canvas backdrop for the mobile drawer layout — only rendered
+            (and only intercepts clicks) once the sider is open, and only
+            shown at all under the @media block in App.css. */}
+        <div
+          className={`app-sider-backdrop ${collapsed ? '' : 'app-sider-backdrop--visible'}`}
+          onClick={() => setCollapsed(true)}
+          aria-hidden="true"
+        />
         <Sider
           width={240}
           collapsedWidth={80}
@@ -97,7 +132,7 @@ function App() {
             mode="inline"
             inlineCollapsed={collapsed}
             selectedKeys={[activePage]}
-            onClick={({ key }) => setActivePage(key)}
+            onClick={({ key }) => handleNavigate(key)}
             items={[
               { key: 'monitor', icon: <DashboardOutlined />, label: 'Monitor Queue' },
               { key: 'prescribe', icon: <FormOutlined />, label: 'Prescribe Medicine' },
@@ -114,6 +149,15 @@ function App() {
 
         <Layout>
           <Header className="app-header" style={{ background: token.colorBgContainer }}>
+            {/* Lives outside the sider so it's still reachable once the
+                sider itself is off-screen on mobile — see @media block in
+                App.css for when this is actually visible. */}
+            <Button
+              type="text"
+              icon={<MenuOutlined />}
+              onClick={() => setCollapsed((value) => !value)}
+              className="mobile-menu-toggle"
+            />
             <div>
               <Text type="secondary">Clinical Operations</Text>
               <Title level={3} style={{ margin: '4px 0 0' }}>

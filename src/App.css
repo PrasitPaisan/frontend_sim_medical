@@ -99,6 +99,115 @@ body {
   overflow: auto;
 }
 
+/* Hidden on desktop — only shown at mobile widths below, since the sider's
+   own toggle (inside .app-sider) is unreachable once the sider is
+   off-screen there. */
+.mobile-menu-toggle {
+  display: none;
+}
+
+.app-sider-backdrop {
+  display: none;
+}
+
+/* Below this width the sider becomes an off-canvas drawer instead of a
+   permanent column: fixed position (removes it from the flex layout, so
+   the content column no longer has to make room for it), full height,
+   slid off-screen via transform and toggled by the header's hamburger
+   button instead of the one built into the sider itself. Width is forced
+   to a single value regardless of the collapsed/expanded antd state
+   (which normally means 80px vs 240px) — on mobile there's no "icon-only"
+   state, just hidden vs. fully open. */
+@media (max-width: 768px) {
+  .app-shell {
+    position: relative;
+  }
+
+  .app-sider {
+    position: fixed !important;
+    inset-block: 0;
+    left: 0;
+    z-index: 1000;
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    flex: 0 0 240px !important;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 32px rgba(20, 40, 60, 0.25);
+  }
+
+  .app-sider:not(.ant-layout-sider-collapsed) {
+    transform: translateX(0);
+  }
+
+  .app-sider-backdrop--visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 25, 35, 0.45);
+    z-index: 999;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex;
+  }
+
+  .app-header {
+    padding: 14px 16px;
+  }
+
+  .app-content {
+    padding: 16px;
+    height: calc(100vh - 72px);
+  }
+
+  .page-shell {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  /* The window-number block's fixed min-width + the card's own padding/gap
+     don't leave enough room for the patient column next to it on a phone
+     — let the card wrap to two lines instead of forcing everything into
+     one and overflowing. */
+  .monitor-queue-card {
+    padding: 16px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .monitor-queue-card__window {
+    min-width: 100px;
+    padding: 10px 16px;
+  }
+
+  .monitor-queue-card__window-number {
+    font-size: 40px;
+  }
+
+  .monitor-queue-card__patient strong {
+    font-size: 20px;
+  }
+
+  /* Each step's flex: 1 (below) shrinks down to its label's min-content —
+     with 6+ pipeline stations that's still wider than a phone screen, and
+     since this sits inside body's overflow-x: hidden, it was silently
+     clipping the last station(s) instead of scrolling to them. Let it
+     scroll horizontally on its own instead, with steps at a fixed readable
+     width rather than being squeezed. */
+  .station-stepper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+  }
+
+  .station-stepper__step {
+    flex: 0 0 auto;
+    min-width: 92px;
+  }
+}
+
 .page-shell {
   background: rgba(255,255,255,0.94);
   border: 1px solid #e7eef3;
@@ -135,6 +244,14 @@ body {
 
 .page-shell__content {
   display: grid;
+  /* Every page's content sits in this one implicit column — without a cap,
+     it sizes to the widest descendant's max-content instead of the actual
+     container width. A grid with several fields inside (e.g. Add Medicine's
+     15-field form, long placeholders like "Suzhou Changzheng Xinkai
+     Pharmaceutical") blows this out badly enough to push the whole page
+     wider than the viewport on narrow screens. Same fix as
+     .prescription-details below. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -159,6 +276,7 @@ body {
 
 .prescription-toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
@@ -198,6 +316,7 @@ body {
 
 .prescription-toolbar__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -216,6 +335,11 @@ body {
 
 .prescription-list {
   display: grid;
+  /* Same grid-blowout fix as .prescription-details/.page-shell__content —
+     without this, the widest card (e.g. one whose station-stepper has many
+     stations) sizes this column to its content instead of the actual
+     container width. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -294,6 +418,13 @@ body {
   border: 1px solid #e6eeff;
   background: linear-gradient(135deg, #f9fbff 0%, #f4f8ff 100%);
   display: grid;
+  /* Without this, the grid's implicit column sizes to the widest child's
+     content — a Table with several columns pushes it (and every ancestor
+     up to .prescription-card) wider than the viewport on narrow screens.
+     minmax(0, 1fr) caps the column at the container's actual width, so the
+     Table's own scroll={{ x: 'max-content' }} handles overflow internally
+     instead. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   color: #42515e;
 }
@@ -305,6 +436,7 @@ body {
   border: 1px solid #e6eeff;
   background: linear-gradient(135deg, #f5f9ff 0%, #f4f8ff 100%);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -668,11 +800,21 @@ body {
   margin-bottom: 0;
 }
 
+.prescribe-order__drug-row-extra-label {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c7d8a;
+}
+
 .prescribe-order__drug-row-extra {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   width: 100%;
+  padding-top: 8px;
+  border-top: 1px dashed #e3ecf3;
 }
 
 .prescribe-order__drug-row-extra .ant-form-item {
