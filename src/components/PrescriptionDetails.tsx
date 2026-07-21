@@ -1,6 +1,7 @@
 import { Table, Tag } from 'antd'
 import type { PrescriptionDetail } from '../hooks/usePrescriptions'
 import { getDispenseTypeColor } from '../lib/dispenseType'
+import { getPriorityColor, getPriorityLabel } from '../lib/priority'
 
 type PrescriptionDetailsProps = {
   details: PrescriptionDetail[]
@@ -19,6 +20,14 @@ const columns = [
   },
   { title: 'Unit', dataIndex: 'medunit', key: 'medunit' },
   { title: 'Qty', dataIndex: 'medicinenum', key: 'medicinenum', align: 'right' as const },
+  {
+    title: 'Priority',
+    dataIndex: 'priority',
+    key: 'priority',
+    // Higher value = more urgent, so sorting ascending means "least urgent first".
+    sorter: (a: PrescriptionDetail, b: PrescriptionDetail) => (a.priority ?? 0) - (b.priority ?? 0),
+    render: (value: number) => <Tag color={getPriorityColor(value)}>{getPriorityLabel(value)}</Tag>,
+  },
   {
     title: 'Type',
     key: 'type',

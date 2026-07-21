@@ -1,13 +1,15 @@
 import { Button, message, Popconfirm } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
+import { ReloadOutlined, WarningFilled, CheckCircleOutlined } from '@ant-design/icons'
 import PageShell from '../components/PageShell'
 import StationActionCard from '../components/machinesim/StationActionCard'
+import MachineActionCard from '../components/machinesim/MachineActionCard'
+import QueryReadyPrescriptionsCard from '../components/machinesim/QueryReadyPrescriptionsCard'
 import { useMachineSim } from '../hooks/useMachineSim'
 import { useBaskets } from '../hooks/useBaskets'
 import { PIPELINE_STATIONS } from '../lib/stations'
 
 export default function MachineSimPage() {
-  const { advanceState } = useMachineSim()
+  const { advanceState, eliminatePrescription, confirmDispensingComplete, queryReadyPrescriptions } = useMachineSim()
   const { baskets, loadBaskets, resetAll } = useBaskets()
 
   const handlePass = async (hisId: string, station: number) => {
@@ -53,6 +55,27 @@ export default function MachineSimPage() {
             baskets={baskets.filter((basket) => basket.station_status === station.state)}
           />
         ))}
+        <MachineActionCard
+          icon={<WarningFilled />}
+          title="Eliminate Prescription"
+          description="เรียก ExecEliminatePrescription ไปที่เครื่อง RB1500 โดยตรง — สำเร็จแล้วจะปล่อยตะกร้ากลับ pool ให้ใช้ใหม่ได้"
+          actionLabel="Eliminate"
+          confirmTitle="Eliminate this prescription on the machine?"
+          confirmDescription="This calls the real machine's SOAP endpoint directly and cannot be undone."
+          variant="danger"
+          onSubmit={eliminatePrescription}
+        />
+        <MachineActionCard
+          icon={<CheckCircleOutlined />}
+          title="Confirm Dispensing Complete"
+          description="เรียก UpdateReadyPrescriptionState บอกเครื่อง RB1500 ว่าเภสัชกรตรวจสอบแล้วจ่ายยาเสร็จสิ้น (ไม่มีผลกับ database)"
+          actionLabel="Confirm"
+          confirmTitle="Confirm this prescription as dispensed on the machine?"
+          confirmDescription="This calls the real machine's SOAP endpoint directly to clear it from the machine's ready queue."
+          variant="positive"
+          onSubmit={confirmDispensingComplete}
+        />
+        <QueryReadyPrescriptionsCard onQuery={queryReadyPrescriptions} />
       </div>
     </PageShell>
   )

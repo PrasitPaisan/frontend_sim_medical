@@ -1,53 +1,34 @@
-import { Button, DatePicker, Form, Input, InputNumber, Select, message } from 'antd'
+import { Button, DatePicker, Form, Input, InputNumber, Select } from 'antd'
 import dayjs from 'dayjs'
-import type { MedicineFormValues, SendMedicineResult, TargetMachine } from '../../hooks/useMedicines'
+import type { MedicineFormValues } from '../../hooks/useMedicines'
 import { DISPENSE_TYPE_OPTIONS } from '../../lib/dispenseType'
 
-const TARGET_MACHINE_OPTIONS: { value: TargetMachine; label: string }[] = [
-  { value: 'RB1500', label: 'RB-1500' },
-  { value: 'NZP360', label: 'NZP-360' },
-]
-
-type MedicineForm = MedicineFormValues & { validate_time?: dayjs.Dayjs | string; targetMachine: TargetMachine }
+type MedicineForm = MedicineFormValues & { validate_time?: dayjs.Dayjs | string }
 
 type MedicineFormProps = {
-  submitting: boolean
-  onSubmit: (values: MedicineFormValues, targetMachine: TargetMachine) => Promise<SendMedicineResult>
+  onAdd: (values: MedicineFormValues) => void
 }
 
-export default function MedicineForm({ submitting, onSubmit }: MedicineFormProps) {
+export default function MedicineForm({ onAdd }: MedicineFormProps) {
   const [form] = Form.useForm<MedicineForm>()
 
-  const handleFinish = async (values: MedicineForm) => {
-    const { targetMachine, ...rest } = values
+  const handleFinish = (values: MedicineForm) => {
     const payload: MedicineFormValues = {
-      ...rest,
-      validate_time: rest.validate_time ? dayjs(rest.validate_time).format('YYYY-MM-DD') : undefined,
+      ...values,
+      validate_time: values.validate_time ? dayjs(values.validate_time).format('YYYY-MM-DD') : undefined,
     }
 
-    const result = await onSubmit(payload, targetMachine)
-
-    if (result.ok) {
-      message.success(result.message || `${payload.medicinenamech} sent to machine`)
-      form.resetFields()
-    } else {
-      message.error(result.message)
-    }
+    onAdd(payload)
+    form.resetFields()
   }
 
   return (
     <Form
       form={form}
       layout="vertical"
-      onFinish={(values) => void handleFinish(values)}
-      initialValues={{ medicinestate: 1, boxmaxnum: 1, dispense_type: 'manual', targetMachine: 'RB1500' }}
+      onFinish={(values) => handleFinish(values)}
+      initialValues={{ medicinestate: 1, boxmaxnum: 1, dispense_type: 'manual' }}
     >
-      <div className="medicine-form__target-machine">
-        <Form.Item name="targetMachine" label="Send To Machine" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
-          <Select options={TARGET_MACHINE_OPTIONS} size="large" style={{ minWidth: 220 }} />
-        </Form.Item>
-      </div>
-
       <div className="medicine-form__grid">
         <Form.Item name="medicinehisid" label="Medicine HIS ID" rules={[{ required: true }]}>
           <Input placeholder="1309075152" />
@@ -93,6 +74,9 @@ export default function MedicineForm({ submitting, onSubmit }: MedicineFormProps
         <Form.Item name="boxmaxnum" label="Box Max Num">
           <InputNumber min={1} style={{ width: '100%' }} />
         </Form.Item>
+        <Form.Item name="med_unit_capacity" label="Unit Capacity (NZP-360 only)">
+          <InputNumber min={1} style={{ width: '100%' }} placeholder="9" />
+        </Form.Item>
         <Form.Item name="medposition" label="Position">
           <Input placeholder="article number 12" />
         </Form.Item>
@@ -105,8 +89,8 @@ export default function MedicineForm({ submitting, onSubmit }: MedicineFormProps
       </div>
 
       <Form.Item style={{ marginBottom: 0 }}>
-        <Button type="primary" htmlType="submit" loading={submitting}>
-          Send to Machine
+        <Button type="primary" htmlType="submit">
+          Add to List
         </Button>
       </Form.Item>
     </Form>

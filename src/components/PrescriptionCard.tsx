@@ -17,6 +17,7 @@ export default function PrescriptionCard({ item, isActive, onSelect, isSelectedF
       item={item}
       active={isActive}
       onClick={() => onSelect(item.id)}
+      showPriorityTag
       headerStart={
         <Checkbox
           checked={isSelectedForSend}

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { Tag } from 'antd'
 import type { PrescriptionItem } from '../hooks/usePrescriptions'
+import { getPrescriptionPriority, getPriorityColor, getPriorityLabel } from '../lib/priority'
 
 type PrescriptionBaseCardProps = {
   item: PrescriptionItem
@@ -11,6 +13,8 @@ type PrescriptionBaseCardProps = {
   headerEnd?: ReactNode
   children?: ReactNode
   className?: string
+  /** Shows the prescription's overall priority (highest among its medicines) as a tag next to the patient name. */
+  showPriorityTag?: boolean
 }
 
 export default function PrescriptionBaseCard({
@@ -21,7 +25,10 @@ export default function PrescriptionBaseCard({
   headerEnd,
   children,
   className = '',
+  showPriorityTag = false,
 }: PrescriptionBaseCardProps) {
+  const priority = getPrescriptionPriority(item.details)
+
   return (
     <div
       className={`prescription-card ${active ? 'prescription-card--active' : ''} ${className}`.trim()}
@@ -31,7 +38,14 @@ export default function PrescriptionBaseCard({
         <div className="prescription-card__title-wrap">
           {headerStart}
           <div>
-            <h4 className="prescription-card__title">{item.patientname}</h4>
+            <h4 className="prescription-card__title">
+              {item.patientname}
+              {showPriorityTag ? (
+                <Tag className="prescription-card__priority-tag" color={getPriorityColor(priority)}>
+                  {getPriorityLabel(priority)}
+                </Tag>
+              ) : null}
+            </h4>
             <div className="prescription-card__meta">
               <span className="prescription-card__badge">#{item.mzno}</span>
               <span>Age : {item.patientage}</span>
