@@ -20,3 +20,8 @@ export function getDispenseTypeColor(dispenseType: string | null | undefined): s
   if (!dispenseType) return 'default'
   return DISPENSE_TYPE_COLORS[dispenseType] ?? 'cyan'
 }
+
+export function getDispenseTypeLabel(dispenseType: string | null | undefined): string {
+  if (!dispenseType) return 'Unknown'
+  return DISPENSE_TYPE_OPTIONS.find((option) => option.value === dispenseType)?.label ?? dispenseType
+}

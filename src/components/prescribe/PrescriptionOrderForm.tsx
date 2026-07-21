@@ -3,6 +3,8 @@ import { DeleteOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/i
 import type { Medicine } from '../../hooks/useMedicines'
 import type { Department } from '../../hooks/useDepartments'
 import type { PrescribeOrderInput, PrescribeOrderResult } from '../../hooks/usePrescribeOrder'
+import { PRIORITY_OPTIONS } from '../../lib/priority'
+import { getDispenseTypeLabel } from '../../lib/dispenseType'
 
 const MOCK_FIRST_NAMES = ['สมชาย', 'สมหญิง', 'วิชัย', 'อรทัย', 'ประยุทธ์', 'กัลยา', 'ธนากร', 'วิภา', 'ปิติ', 'มาลี']
 const MOCK_LAST_NAMES = ['ใจดี', 'รักษาดี', 'เจริญสุข', 'ศรีสุข', 'บุญมาก', 'ทองแท้', 'วงศ์สว่าง', 'ยืนยง', 'แสงทอง', 'พูลสวัสดิ์']
@@ -47,6 +49,7 @@ type DrugRow = {
   performfreq?: string
   performfreqprint?: string
   nursingcode?: string
+  priority?: number
 }
 
 type PrescriptionOrderFormValues = {
@@ -90,9 +93,11 @@ export default function PrescriptionOrderForm({
 }: PrescriptionOrderFormProps) {
   const [form] = Form.useForm<PrescriptionOrderFormValues>()
 
+  // Type (dispense_type) shown right after the name — during testing what
+  // matters most is which dispensing scenario/station a medicine routes to.
   const medicineOptions = medicines.map((medicine) => ({
     value: medicine.id,
-    label: `${medicine.medicinenamech} — ${medicine.medicinehisid} (${medicine.medfactoryname})`,
+    label: `${medicine.medicinenamech} — ${getDispenseTypeLabel(medicine.dispense_type)} (${medicine.medicinehisid}, ${medicine.medfactoryname})`,
   }))
 
   const departmentOptions = departments.map((department) => ({
@@ -176,6 +181,7 @@ export default function PrescriptionOrderForm({
         performfreq: freq.freq,
         performfreqprint: freq.print,
         nursingcode: String(randomInt(100000000000, 999999999999)),
+        priority: randomItem(PRIORITY_OPTIONS).value,
       }
     })
 
@@ -252,6 +258,7 @@ export default function PrescriptionOrderForm({
         performfreq: row.performfreq,
         performfreqprint: row.performfreqprint,
         nursingcode: row.nursingcode,
+        priority: row.priority,
       })),
     }
 
@@ -395,6 +402,9 @@ export default function PrescriptionOrderForm({
                 </Form.Item>
                 <Form.Item name={[name, 'medicinehint']} label="Hint" style={{ flex: '1 1 160px' }}>
                   <Input placeholder="Before meal" />
+                </Form.Item>
+                <Form.Item name={[name, 'priority']} label="Priority" style={{ flex: '1 1 140px' }}>
+                  <Select options={PRIORITY_OPTIONS} placeholder="Continue" />
                 </Form.Item>
                 <Button danger type="text" icon={<DeleteOutlined />} onClick={() => remove(name)} style={{ marginTop: 4 }} />
 

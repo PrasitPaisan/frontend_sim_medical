@@ -1,10 +1,13 @@
 import { Table, Tag } from 'antd'
+import type { Key } from 'react'
 import type { Medicine } from '../../hooks/useMedicines'
 import { getDispenseTypeColor } from '../../lib/dispenseType'
 
 type MedicineListProps = {
   medicines: Medicine[]
   loading: boolean
+  selectedRowKeys?: Key[]
+  onSelectionChange?: (keys: Key[], rows: Medicine[]) => void
 }
 
 const columns = [
@@ -58,7 +61,7 @@ const columns = [
   },
 ]
 
-export default function MedicineList({ medicines, loading }: MedicineListProps) {
+export default function MedicineList({ medicines, loading, selectedRowKeys, onSelectionChange }: MedicineListProps) {
   return (
     <Table
       rowKey="id"
@@ -68,6 +71,14 @@ export default function MedicineList({ medicines, loading }: MedicineListProps) 
       pagination={{ pageSize: 10 }}
       locale={{ emptyText: 'No medicines added to the machine yet' }}
       scroll={{ x: 'max-content' }}
+      rowSelection={
+        onSelectionChange
+          ? {
+              selectedRowKeys,
+              onChange: (keys, rows) => onSelectionChange(keys, rows),
+            }
+          : undefined
+      }
     />
   )
 }

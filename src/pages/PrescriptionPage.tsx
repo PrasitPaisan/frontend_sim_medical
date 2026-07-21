@@ -3,28 +3,46 @@ import { message, Spin } from 'antd'
 import PageShell from '../components/PageShell'
 import PrescriptionCard from '../components/PrescriptionCard'
 import PrescriptionToolbar from '../components/PrescriptionToolbar'
-import { usePrescriptions } from '../hooks/usePrescriptions'
+import { usePrescriptions, type PrescriptionItem } from '../hooks/usePrescriptions'
 import { api } from '../lib/api'
 
 export default function PrescriptionPage() {
   const {
     prescriptions,
+    total,
+    page,
+    pageSize,
+    setPage,
     selectedId,
     setSelectedId,
     loading,
     error,
     loadPrescriptions,
     removePrescriptions,
+    fetchPrescriptionIds,
     nextFetchInSeconds,
   } = usePrescriptions()
   const [selectedForSend, setSelectedForSend] = useState<number[]>([])
   const [sendingBatch, setSendingBatch] = useState(false)
+  const [selecting, setSelecting] = useState(false)
 
   const toggleSelection = (id: number) => {
     setSelectedForSend((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     )
   }
+
+  const handleSelectFirstN = async (n: number) => {
+    setSelecting(true)
+    try {
+      const ids = await fetchPrescriptionIds(n)
+      setSelectedForSend(ids)
+    } finally {
+      setSelecting(false)
+    }
+  }
+
+  const handleClearSelection = () => setSelectedForSend([])
 
   const handleSendSelected = async () => {
     if (selectedForSend.length === 0) {
@@ -35,7 +53,20 @@ export default function PrescriptionPage() {
     setSendingBatch(true)
 
     try {
-      const selectedPrescriptions = prescriptions.filter((item) => selectedForSend.includes(item.id))
+      // Bulk-selected ids can span pages that aren't loaded in the browser
+      // (see PrescriptionToolbar's "select first N") — backfill those via
+      // /prescriptions/by-ids before building the send-batch payload, since
+      // the machine call needs each prescription's full medicine list.
+      const loadedIds = new Set(prescriptions.map((item) => item.id))
+      const missingIds = selectedForSend.filter((id) => !loadedIds.has(id))
+      const backfilled = missingIds.length > 0
+        ? await api.post<PrescriptionItem[]>('/prescriptions/by-ids', { ids: missingIds })
+        : []
+
+      const selectedPrescriptions = [
+        ...prescriptions.filter((item) => selectedForSend.includes(item.id)),
+        ...backfilled,
+      ]
       const response = await api.post<{ ok?: boolean; message?: string; updatedIds?: number[] }>(
         '/prescriptions/send-batch',
         { prescriptions: selectedPrescriptions },
@@ -65,13 +96,19 @@ export default function PrescriptionPage() {
   return (
     <PageShell title="Prescription Managements" subtitle="Review prescription batches from the connected backend">
       <PrescriptionToolbar
-        count={prescriptions.length}
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
         loading={loading}
         onRefresh={() => void loadPrescriptions()}
         nextFetchInSeconds={nextFetchInSeconds}
         selectedCount={selectedForSend.length}
         onSendSelected={() => void handleSendSelected()}
         sendingBatch={sendingBatch}
+        onSelectFirstN={(n) => void handleSelectFirstN(n)}
+        onClearSelection={handleClearSelection}
+        selecting={selecting}
       />
 
       {error && (

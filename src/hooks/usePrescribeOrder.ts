@@ -22,6 +22,8 @@ export type PrescribeDetailInput = {
   performfreq?: string
   performfreqprint?: string
   nursingcode?: string
+  // Higher value = more urgent. See lib/priority.ts for the label mapping.
+  priority?: number
 }
 
 export type PrescribeOrderInput = {

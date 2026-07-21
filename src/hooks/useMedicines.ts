@@ -21,6 +21,7 @@ export type Medicine = {
   created_at: string
   updated_at: string
   dispense_type: string
+  med_unit_capacity: number | null
 }
 
 export type MedicineFormValues = {
@@ -40,6 +41,8 @@ export type MedicineFormValues = {
   med_batch?: string
   validate_time?: string
   dispense_type?: string
+  /** NZP360-only field (med_unit_capacity in its DataTable) — ignored by RB1500's SendMedicine contract. */
+  med_unit_capacity?: number
 }
 
 export type TargetMachine = 'RB1500' | 'NZP360'
@@ -47,7 +50,7 @@ export type TargetMachine = 'RB1500' | 'NZP360'
 export type SendMedicineResult = {
   ok: boolean
   message: string
-  medicine?: Medicine
+  medicines?: Medicine[]
 }
 
 export function useMedicines() {
@@ -72,23 +75,24 @@ export function useMedicines() {
     void loadMedicines()
   }, [])
 
-  // Only lands in the list once the machine has actually accepted it — the
-  // backend skips the DB write entirely when the machine call fails.
+  // Only lands in the list once the machine has actually accepted the whole
+  // batch — the backend skips the DB write entirely when the machine call
+  // fails (all-or-nothing, so a rejected batch can be retried/edited as-is).
   // targetMachine picks which machine's SOAP endpoint the backend calls —
-  // purely a routing choice for this test page, independent of the medicine's
-  // own dispense_type field (which is what actually gets saved to the DB).
-  const sendMedicine = async (values: MedicineFormValues, targetMachine: TargetMachine): Promise<SendMedicineResult> => {
+  // purely a routing choice for this test page, independent of each
+  // medicine's own dispense_type field (which is what actually gets saved to the DB).
+  const sendMedicines = async (values: MedicineFormValues[], targetMachine: TargetMachine): Promise<SendMedicineResult> => {
     try {
-      const result = await api.post<SendMedicineResult>('/medicines/send', { medicine: values, targetMachine })
-      if (result.ok && result.medicine) {
-        const saved = result.medicine
-        setMedicines((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+      const result = await api.post<SendMedicineResult>('/medicines/send', { medicines: values, targetMachine })
+      if (result.ok && result.medicines) {
+        const savedIds = new Set(result.medicines.map((item) => item.id))
+        setMedicines((current) => [...result.medicines!, ...current.filter((item) => !savedIds.has(item.id))])
       }
       return result
     } catch (err) {
-      return { ok: false, message: err instanceof Error ? err.message : 'Failed to send medicine' }
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to send medicines' }
     }
   }
 
-  return { medicines, loading, error, loadMedicines, sendMedicine }
+  return { medicines, loading, error, loadMedicines, sendMedicines }
 }

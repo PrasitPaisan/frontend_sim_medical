@@ -333,6 +333,26 @@ body {
   color: #fff !important;
 }
 
+.prescription-toolbar__select-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+}
+
+.prescription-toolbar__select-label {
+  color: #6c7d8a;
+  font-size: 13px;
+  margin-right: 2px;
+}
+
+.prescription-toolbar__pagination {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .prescription-list {
   display: grid;
   /* Same grid-blowout fix as .prescription-details/.page-shell__content —
@@ -377,9 +397,24 @@ body {
 }
 
 .prescription-card__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   color: #18313f;
   font-size: 16px;
+}
+
+.prescription-card__priority-tag {
+  margin-right: 0;
+  margin-inline-end: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 10px;
+  text-transform: uppercase;
+  border-width: 1.5px;
+  flex-shrink: 0;
 }
 
 .prescription-card__meta {
@@ -680,6 +715,75 @@ body {
   font-weight: 600;
 }
 
+.machine-sim-card--danger {
+  border-color: #f3c6c6;
+  background: linear-gradient(180deg, #fffafa 0%, #fdf3f3 100%);
+}
+
+.machine-sim-card--danger .machine-sim-card__header h4 {
+  color: #a8342a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.machine-sim-card--positive {
+  border-color: #bfe8cf;
+  background: linear-gradient(180deg, #f9fffb 0%, #f0fbf4 100%);
+}
+
+.machine-sim-card--positive .machine-sim-card__header h4 {
+  color: #2f9e5b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.machine-sim-card--wide {
+  grid-column: 1 / -1;
+}
+
+.machine-sim-card--wide .machine-sim-card__header h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.machine-sim-card__query-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.machine-sim-card__query-meta {
+  color: #6c7d8a;
+  font-size: 13px;
+}
+
+.machine-sim-card__query-empty {
+  color: #6c7d8a;
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.machine-sim-card__ready-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.machine-sim-card__error {
+  color: #c9342a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .prescription-empty {
   padding: 22px;
   border: 1px dashed #dce7ee;
@@ -757,22 +861,6 @@ body {
   color: #6c7d8a;
 }
 
-.medicine-form__target-machine {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 16px 20px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #3874ff 0%, #5996ff 100%);
-  box-shadow: 0 8px 22px rgba(56, 116, 255, 0.25);
-}
-
-.medicine-form__target-machine .ant-form-item-label > label {
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-}
-
 .medicine-form__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -780,6 +868,38 @@ body {
 }
 
 .medicine-list__subtext {
+  color: #6c7d8a;
+  font-size: 12px;
+}
+
+.medicine-staging__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.medicine-staging__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.medicine-staging__details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+}
+
+.medicine-staging__details-row {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.medicine-staging__details-label {
   color: #6c7d8a;
   font-size: 12px;
 }
