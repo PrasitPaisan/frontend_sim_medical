@@ -40,30 +40,49 @@ const columns = (onRemove: (key: string) => void) => [
   },
 ]
 
+type DetailRow = { label: string; value: string | number | undefined }
+
+function renderDetailGroup(title: string, rows: DetailRow[]) {
+  return (
+    <div className="medicine-staging__details-group" key={title}>
+      <h6 className="medicine-staging__details-group-title">{title}</h6>
+      <div className="medicine-staging__details">
+        {rows.map((row) => (
+          <div key={row.label} className="medicine-staging__details-row">
+            <span className="medicine-staging__details-label">{row.label}</span>
+            <span>{row.value || '—'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function renderDetails(record: StagedMedicine) {
-  const rows: { label: string; value: string | number | undefined }[] = [
+  const common: DetailRow[] = [
     { label: 'State', value: record.medicinestate === 1 ? 'Active' : 'Inactive' },
     { label: 'Factory ID', value: record.medfactoryid },
     { label: 'Type Unit', value: record.typeunit },
-    { label: 'HPM Type Unit', value: record.hpmtypeunit },
     { label: 'Num Code', value: record.numcode },
     { label: 'PY Code', value: record.pycode },
     { label: 'Box Max Num', value: record.boxmaxnum },
-    { label: 'Unit Capacity (NZP-360)', value: record.med_unit_capacity },
+  ]
+
+  const rb1500Only: DetailRow[] = [
+    { label: 'HPM Type Unit', value: record.hpmtypeunit },
     { label: 'Position', value: record.medposition },
     { label: 'Batch', value: record.med_batch },
     { label: 'Expiry', value: record.validate_time },
   ]
 
+  const nzp360Only: DetailRow[] = [{ label: 'Unit Capacity', value: record.med_unit_capacity }]
+
   return (
-    <div className="medicine-staging__details">
-      {rows.map((row) => (
-        <div key={row.label} className="medicine-staging__details-row">
-          <span className="medicine-staging__details-label">{row.label}</span>
-          <span>{row.value || '—'}</span>
-        </div>
-      ))}
-    </div>
+    <>
+      {renderDetailGroup('Common', common)}
+      {renderDetailGroup('RB-1500 Only', rb1500Only)}
+      {renderDetailGroup('NZP-360 Only', nzp360Only)}
+    </>
   )
 }
 

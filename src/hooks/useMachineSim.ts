@@ -24,6 +24,15 @@ export type QueryReadyResult = {
   queriedAt: string
 }
 
+// Mirrors MachineService.getMachineStatusFromRB1500's response shape.
+export type MachineStateResult = {
+  ok: boolean
+  message: string
+  machineState?: string
+  machineMessage?: string
+  queriedAt: string
+}
+
 export function useMachineSim() {
   const advanceState = async (prescriptionhisid: string, station: number): Promise<AdvanceStateResult> => {
     try {
@@ -31,6 +40,20 @@ export function useMachineSim() {
       return { ok: true, message: `${prescriptionhisid} advanced to station ${station}` }
     } catch (err) {
       return { ok: false, message: err instanceof Error ? err.message : 'Failed to advance station' }
+    }
+  }
+
+  // Builds the exact SOAP body eliminatePrescription would transmit,
+  // without sending it — lets the UI show a confirmation preview before the
+  // real machine call.
+  const previewEliminatePrescription = async (
+    prescriptionhisid: string,
+  ): Promise<{ ok: true; xml: string } | { ok: false; message: string }> => {
+    try {
+      const result = await api.post<{ xml: string }>('/machine/eliminate-prescription/preview', { prescriptionhisid })
+      return { ok: true, xml: result.xml }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to build preview' }
     }
   }
 
@@ -51,6 +74,20 @@ export function useMachineSim() {
       }
     } catch (err) {
       return { ok: false, message: err instanceof Error ? err.message : 'Failed to reach dispensing machine' }
+    }
+  }
+
+  // Builds the exact SOAP body confirmDispensingComplete would transmit,
+  // without sending it — lets the UI show a confirmation preview before the
+  // real machine call.
+  const previewConfirmDispensingComplete = async (
+    prescriptionhisid: string,
+  ): Promise<{ ok: true; xml: string } | { ok: false; message: string }> => {
+    try {
+      const result = await api.post<{ xml: string }>('/machine/update-ready-state/preview', { prescriptionhisid })
+      return { ok: true, xml: result.xml }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to build preview' }
     }
   }
 
@@ -103,5 +140,41 @@ export function useMachineSim() {
     }
   }
 
-  return { advanceState, eliminatePrescription, confirmDispensingComplete, queryReadyPrescriptions }
+  // Asks RB1500 for its own health/online status (QueryMachineState) — read-only,
+  // no database write on either side, same as queryReadyPrescriptions.
+  const queryMachineState = async (machineId: number): Promise<MachineStateResult> => {
+    try {
+      const result = await api.get<{
+        ok: boolean
+        message?: string
+        machineState?: string
+        machineMessage?: string
+        queriedAt?: string
+      }>(`/machine/status?machineId=${machineId}`)
+
+      return {
+        ok: result.ok,
+        message: result.message || (result.ok ? 'Fetched machine status' : 'Machine rejected the request'),
+        machineState: result.machineState,
+        machineMessage: result.machineMessage,
+        queriedAt: result.queriedAt ?? new Date().toISOString(),
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : 'Failed to reach dispensing machine',
+        queriedAt: new Date().toISOString(),
+      }
+    }
+  }
+
+  return {
+    advanceState,
+    eliminatePrescription,
+    previewEliminatePrescription,
+    confirmDispensingComplete,
+    previewConfirmDispensingComplete,
+    queryReadyPrescriptions,
+    queryMachineState,
+  }
 }

@@ -656,6 +656,21 @@ body {
   margin-bottom: 12px;
 }
 
+.machine-sim-section {
+  margin-bottom: 28px;
+}
+
+.machine-sim-section__title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c7d8a;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e3ebf0;
+}
+
 .machine-sim-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -867,9 +882,43 @@ body {
   gap: 4px 16px;
 }
 
+.medicine-form__section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.medicine-form__section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 8px;
+}
+
+.medicine-form__section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c7d8a;
+}
+
 .medicine-list__subtext {
   color: #6c7d8a;
   font-size: 12px;
+}
+
+.medicine-preview__xml {
+  max-height: 60vh;
+  overflow: auto;
+  margin: 0;
+  padding: 12px 16px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .medicine-staging__header {
@@ -902,6 +951,23 @@ body {
 .medicine-staging__details-label {
   color: #6c7d8a;
   font-size: 12px;
+}
+
+.medicine-staging__details-group {
+  margin-bottom: 14px;
+}
+
+.medicine-staging__details-group:last-child {
+  margin-bottom: 0;
+}
+
+.medicine-staging__details-group-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c7d8a;
 }
 
 .prescribe-order__drug-row {

@@ -1,26 +1,29 @@
-import { Button, Form, Input, message } from 'antd'
+import { Button, Form, Input } from 'antd'
+import type { FormInstance } from 'antd'
 import type { DepartmentFormValues } from '../../hooks/useDepartments'
 
 type DepartmentFormProps = {
   submitting: boolean
-  onSubmit: (values: DepartmentFormValues) => Promise<{ ok: boolean; message?: string }>
+  saving?: boolean
+  formRef?: React.RefObject<FormInstance<DepartmentFormValues> | null>
+  onSubmit: (values: DepartmentFormValues) => void
+  onSaveToDatabase?: (values: DepartmentFormValues) => void
 }
 
-export default function DepartmentForm({ submitting, onSubmit }: DepartmentFormProps) {
+export default function DepartmentForm({ submitting, saving, formRef, onSubmit, onSaveToDatabase }: DepartmentFormProps) {
   const [form] = Form.useForm<DepartmentFormValues>()
 
-  const handleFinish = async (values: DepartmentFormValues) => {
-    const result = await onSubmit(values)
-    if (result.ok) {
-      message.success(`Department "${values.deptname}" saved`)
-      form.resetFields()
-    } else {
-      message.error(result.message || 'Failed to save department')
-    }
+  if (formRef) {
+    formRef.current = form
+  }
+
+  const handleSaveToDatabase = () => {
+    if (!onSaveToDatabase) return
+    form.validateFields().then(onSaveToDatabase).catch(() => undefined)
   }
 
   return (
-    <Form form={form} layout="vertical" onFinish={(values) => void handleFinish(values)}>
+    <Form form={form} layout="vertical" onFinish={(values) => onSubmit(values)}>
       <div className="medicine-form__grid">
         <Form.Item name="deptcode" label="Department Code" rules={[{ required: true }]}>
           <Input placeholder="701" />
@@ -34,9 +37,16 @@ export default function DepartmentForm({ submitting, onSubmit }: DepartmentFormP
       </div>
 
       <Form.Item style={{ marginBottom: 0 }}>
-        <Button type="primary" htmlType="submit" loading={submitting}>
-          Save Department
-        </Button>
+        <div className="medicine-staging__actions">
+          {onSaveToDatabase ? (
+            <Button loading={saving} onClick={handleSaveToDatabase}>
+              Save to Database
+            </Button>
+          ) : null}
+          <Button type="primary" htmlType="submit" loading={submitting}>
+            Save Department
+          </Button>
+        </div>
       </Form.Item>
     </Form>
   )

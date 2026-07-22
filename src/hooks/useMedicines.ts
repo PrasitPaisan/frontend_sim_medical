@@ -22,6 +22,8 @@ export type Medicine = {
   updated_at: string
   dispense_type: string
   med_unit_capacity: number | null
+  /** 'pending' = saved locally only, not yet confirmed by the real machine; 'synced' = machine accepted it. */
+  sync_status: 'pending' | 'synced'
 }
 
 export type MedicineFormValues = {
@@ -94,5 +96,36 @@ export function useMedicines() {
     }
   }
 
-  return { medicines, loading, error, loadMedicines, sendMedicines }
+  // Persists straight to medicine_dictionary with no machine call — lets
+  // medicines be prepared ahead of time (sync_status = 'pending') and
+  // dispatched later by reselecting them from this same list into the
+  // staging table (see AddMedicinePage's "Add Selected to List").
+  const saveMedicines = async (values: MedicineFormValues[]): Promise<SendMedicineResult> => {
+    try {
+      const result = await api.post<SendMedicineResult>('/medicines/save', { medicines: values })
+      if (result.ok && result.medicines) {
+        const savedIds = new Set(result.medicines.map((item) => item.id))
+        setMedicines((current) => [...result.medicines!, ...current.filter((item) => !savedIds.has(item.id))])
+      }
+      return result
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to save medicines' }
+    }
+  }
+
+  // Builds the exact SOAP body /send would transmit, without sending it —
+  // lets the UI show a confirmation preview before the real machine call.
+  const previewSendMedicines = async (
+    values: MedicineFormValues[],
+    targetMachine: TargetMachine,
+  ): Promise<{ ok: true; xml: string } | { ok: false; message: string }> => {
+    try {
+      const result = await api.post<{ xml: string }>('/medicines/preview', { medicines: values, targetMachine })
+      return { ok: true, xml: result.xml }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to build preview' }
+    }
+  }
+
+  return { medicines, loading, error, loadMedicines, sendMedicines, saveMedicines, previewSendMedicines }
 }
