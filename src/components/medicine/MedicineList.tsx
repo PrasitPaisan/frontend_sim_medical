@@ -35,6 +35,14 @@ const columns = [
   },
   { title: 'Factory', dataIndex: 'medfactoryname', key: 'medfactoryname' },
   {
+    title: 'Status',
+    dataIndex: 'sync_status',
+    key: 'sync_status',
+    render: (value: 'pending' | 'synced') => (
+      <Tag color={value === 'synced' ? 'green' : 'orange'}>{value === 'synced' ? 'Sent to Machine' : 'Pending'}</Tag>
+    ),
+  },
+  {
     title: 'Dispense Station',
     dataIndex: 'dispense_type',
     key: 'dispense_type',

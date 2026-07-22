@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Key } from 'react'
-import { Button, Select, message } from 'antd'
+import { Button, Modal, Select, message } from 'antd'
 import PageShell from '../components/PageShell'
 import MedicineForm from '../components/medicine/MedicineForm'
 import MedicineList from '../components/medicine/MedicineList'
@@ -36,10 +36,13 @@ function toStagedMedicine(medicine: Medicine): StagedMedicine {
 }
 
 export default function AddMedicinePage() {
-  const { medicines, loading, sendMedicines } = useMedicines()
+  const { medicines, loading, sendMedicines, saveMedicines, previewSendMedicines } = useMedicines()
   const [staged, setStaged] = useState<StagedMedicine[]>([])
   const [targetMachine, setTargetMachine] = useState<TargetMachine>('RB1500')
   const [submitting, setSubmitting] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewXml, setPreviewXml] = useState<string | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
   const [selectedMedicines, setSelectedMedicines] = useState<Medicine[]>([])
 
@@ -58,8 +61,24 @@ export default function AddMedicinePage() {
     setStaged((current) => current.filter((item) => item._key !== key))
   }
 
-  const handleSendAll = async () => {
+  const handleOpenPreview = async () => {
     if (staged.length === 0) return
+    setPreviewLoading(true)
+    try {
+      const payload = staged.map(({ _key, ...rest }) => rest)
+      const result = await previewSendMedicines(payload, targetMachine)
+      if (result.ok) {
+        setPreviewXml(result.xml)
+      } else {
+        message.error(result.message)
+      }
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const handleConfirmSend = async () => {
+    setPreviewXml(null)
     setSubmitting(true)
     try {
       const payload = staged.map(({ _key, ...rest }) => rest)
@@ -72,6 +91,31 @@ export default function AddMedicinePage() {
       }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleCopyPreview = () => {
+    if (!previewXml) return
+    void navigator.clipboard.writeText(previewXml).then(
+      () => message.success('SOAP body copied to clipboard'),
+      () => message.error('Failed to copy to clipboard'),
+    )
+  }
+
+  const handleSaveAll = async () => {
+    if (staged.length === 0) return
+    setSaving(true)
+    try {
+      const payload = staged.map(({ _key, ...rest }) => rest)
+      const result = await saveMedicines(payload)
+      if (result.ok) {
+        message.success(result.message || `Saved ${payload.length} medicine(s) to the database`)
+        setStaged([])
+      } else {
+        message.error(result.message)
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -92,7 +136,10 @@ export default function AddMedicinePage() {
               options={TARGET_MACHINE_OPTIONS}
               style={{ minWidth: 160 }}
             />
-            <Button type="primary" disabled={staged.length === 0} loading={submitting} onClick={() => void handleSendAll()}>
+            <Button disabled={staged.length === 0} loading={saving} onClick={() => void handleSaveAll()}>
+              Save to Database
+            </Button>
+            <Button type="primary" disabled={staged.length === 0} loading={previewLoading} onClick={() => void handleOpenPreview()}>
               Send All to Machine
             </Button>
           </div>
@@ -100,9 +147,29 @@ export default function AddMedicinePage() {
         <MedicineStagingTable medicines={staged} onRemove={handleRemove} />
       </div>
 
+      <Modal
+        title={`Confirm SOAP payload (${targetMachine === 'RB1500' ? 'RB-1500' : 'NZP-360'})`}
+        open={previewXml !== null}
+        onCancel={() => setPreviewXml(null)}
+        width={720}
+        footer={[
+          <Button key="cancel" onClick={() => setPreviewXml(null)}>
+            Cancel
+          </Button>,
+          <Button key="copy" onClick={handleCopyPreview}>
+            Copy
+          </Button>,
+          <Button key="send" type="primary" loading={submitting} onClick={() => void handleConfirmSend()}>
+            Confirm &amp; Send
+          </Button>,
+        ]}
+      >
+        <pre className="medicine-preview__xml">{previewXml}</pre>
+      </Modal>
+
       <div className="placeholder-card">
         <div className="medicine-staging__header">
-          <h4>Medicines on the machine</h4>
+          <h4>Medicine Database</h4>
           <Button
             disabled={selectedMedicines.length === 0}
             onClick={handleAddSelected}

@@ -5,6 +5,7 @@ import type { Department } from '../../hooks/useDepartments'
 import type { PrescribeOrderInput, PrescribeOrderResult } from '../../hooks/usePrescribeOrder'
 import { PRIORITY_OPTIONS } from '../../lib/priority'
 import { getDispenseTypeLabel } from '../../lib/dispenseType'
+import { splitQuantity } from '../../lib/quantity'
 
 const MOCK_FIRST_NAMES = ['สมชาย', 'สมหญิง', 'วิชัย', 'อรทัย', 'ประยุทธ์', 'กัลยา', 'ธนากร', 'วิภา', 'ปิติ', 'มาลี']
 const MOCK_LAST_NAMES = ['ใจดี', 'รักษาดี', 'เจริญสุข', 'ศรีสุข', 'บุญมาก', 'ทองแท้', 'วงศ์สว่าง', 'ยืนยง', 'แสงทอง', 'พูลสวัสดิ์']
@@ -34,6 +35,15 @@ type DrugRow = {
   medfactoryid?: string
   medfactoryname?: string
   medicinenamech?: string
+  // Autofilled from the medicine dictionary on select — drives the
+  // totalQuantity -> medicinenum/medicineheteromorphism split below.
+  typeunit?: string
+  hpmtypeunit?: string
+  boxmaxnum?: number
+  // The only quantity field the pharmacist actually types, in hpmtypeunit
+  // units (e.g. pills) — medicinenum/medicineheteromorphism are derived from
+  // this via splitQuantity, not entered directly.
+  totalQuantity?: number
   medicinenum?: number
   medicineheteromorphism?: number
   medicinehint?: string
@@ -116,6 +126,9 @@ export default function PrescriptionOrderForm({
     if (!medicine) return
 
     const drugs = form.getFieldValue('drugs') as DrugRow[]
+    const totalQuantity = drugs[rowIndex]?.totalQuantity ?? 0
+    const { medicinenum, medicineheteromorphism } = splitQuantity(totalQuantity, medicine.boxmaxnum)
+
     drugs[rowIndex] = {
       ...drugs[rowIndex],
       medicineId,
@@ -124,8 +137,29 @@ export default function PrescriptionOrderForm({
       medfactoryid: medicine.medfactoryid ?? undefined,
       medfactoryname: medicine.medfactoryname,
       medicinenamech: medicine.medicinenamech,
+      typeunit: medicine.typeunit,
+      hpmtypeunit: medicine.hpmtypeunit,
+      boxmaxnum: medicine.boxmaxnum,
+      medicinenum,
+      medicineheteromorphism,
       drugspec: medicine.medicineunit,
       drugpycode: medicine.pycode,
+    }
+    form.setFieldValue('drugs', [...drugs])
+  }
+
+  // Recomputes medicinenum/medicineheteromorphism whenever the pharmacist
+  // types a new total quantity — the only quantity value they enter directly.
+  const handleTotalQuantityChange = (rowIndex: number, totalQuantity: number | null) => {
+    const drugs = form.getFieldValue('drugs') as DrugRow[]
+    const boxmaxnum = drugs[rowIndex]?.boxmaxnum ?? 1
+    const { medicinenum, medicineheteromorphism } = splitQuantity(totalQuantity ?? 0, boxmaxnum)
+
+    drugs[rowIndex] = {
+      ...drugs[rowIndex],
+      totalQuantity: totalQuantity ?? undefined,
+      medicinenum,
+      medicineheteromorphism,
     }
     form.setFieldValue('drugs', [...drugs])
   }
@@ -160,6 +194,11 @@ export default function PrescriptionOrderForm({
 
     const drugs: DrugRow[] = chosenMedicines.map((medicine) => {
       const freq = randomItem(MOCK_PERFORM_FREQS)
+      // Spans a few boxmaxnum's worth so the mock data actually exercises the
+      // medicinenum/medicineheteromorphism split instead of always landing on
+      // a suspiciously exact multiple of boxmaxnum.
+      const totalQuantity = randomInt(1, Math.max(medicine.boxmaxnum * 3, 30))
+      const { medicinenum, medicineheteromorphism } = splitQuantity(totalQuantity, medicine.boxmaxnum)
       return {
         medicineId: medicine.id,
         medhisid: medicine.medicinehisid,
@@ -167,8 +206,12 @@ export default function PrescriptionOrderForm({
         medfactoryid: medicine.medfactoryid ?? undefined,
         medfactoryname: medicine.medfactoryname,
         medicinenamech: medicine.medicinenamech,
-        medicinenum: randomInt(1, 30),
-        medicineheteromorphism: 0,
+        typeunit: medicine.typeunit,
+        hpmtypeunit: medicine.hpmtypeunit,
+        boxmaxnum: medicine.boxmaxnum,
+        totalQuantity,
+        medicinenum,
+        medicineheteromorphism,
         medicinehint: randomItem(MOCK_HINTS),
         drugspec: medicine.medicineunit,
         drugpycode: medicine.pycode,
@@ -215,7 +258,10 @@ export default function PrescriptionOrderForm({
       return
     }
 
-    const incompleteRow = values.drugs.find((row) => !row.medhisid || !row.medicinenum)
+    // !row.totalQuantity here (not medicinenum) — an order under one full
+    // box legitimately has medicinenum = 0, so checking that would wrongly
+    // reject a valid "loose tablets only" order.
+    const incompleteRow = values.drugs.find((row) => !row.medhisid || !row.totalQuantity)
     if (incompleteRow) {
       message.warning('Pick a medicine and enter quantity for every row')
       return
@@ -360,7 +406,10 @@ export default function PrescriptionOrderForm({
       </div>
 
       <h4 style={{ marginTop: 24 }}>Medicines</h4>
-      <p className="medicine-list__subtext">Pick from the machine's medicine dictionary — matching fields autofill; quantity and hint still need to be entered by hand.</p>
+      <p className="medicine-list__subtext">
+        Pick from the machine's medicine dictionary — matching fields autofill. Enter the total quantity in the medicine's small unit
+        (e.g. pills); it's split into box + leftover units automatically.
+      </p>
 
       <Form.List name="drugs">
         {(fields, { add, remove }) => (
@@ -394,11 +443,42 @@ export default function PrescriptionOrderForm({
                 <Form.Item name={[name, 'medicinenamech']} hidden>
                   <Input />
                 </Form.Item>
-                <Form.Item name={[name, 'medicinenum']} label="Quantity" rules={[{ required: true, message: 'Required' }]} style={{ flex: '1 1 100px' }}>
-                  <InputNumber min={1} style={{ width: '100%' }} />
+                <Form.Item name={[name, 'typeunit']} hidden>
+                  <Input />
                 </Form.Item>
-                <Form.Item name={[name, 'medicineheteromorphism']} label="Heteromorphism" style={{ flex: '1 1 120px' }}>
-                  <InputNumber min={0} style={{ width: '100%' }} />
+                <Form.Item name={[name, 'hpmtypeunit']} hidden>
+                  <Input />
+                </Form.Item>
+                <Form.Item name={[name, 'boxmaxnum']} hidden>
+                  <InputNumber />
+                </Form.Item>
+                <Form.Item name={[name, 'medicinenum']} hidden>
+                  <InputNumber />
+                </Form.Item>
+                <Form.Item name={[name, 'medicineheteromorphism']} hidden>
+                  <InputNumber />
+                </Form.Item>
+                <Form.Item shouldUpdate noStyle>
+                  {() => {
+                    const row = (form.getFieldValue('drugs') as DrugRow[] | undefined)?.[name]
+                    const hpmtypeunit = row?.hpmtypeunit || 'unit'
+                    const typeunit = row?.typeunit || 'box'
+                    return (
+                      <Form.Item
+                        name={[name, 'totalQuantity']}
+                        label={`Total Quantity (${hpmtypeunit})`}
+                        rules={[{ required: true, message: 'Required' }]}
+                        extra={
+                          row?.boxmaxnum
+                            ? `= ${row.medicinenum ?? 0} ${typeunit} + ${row.medicineheteromorphism ?? 0} ${hpmtypeunit} (${row.boxmaxnum} ${hpmtypeunit}/${typeunit})`
+                            : 'Pick a medicine first'
+                        }
+                        style={{ flex: '1 1 220px' }}
+                      >
+                        <InputNumber min={1} style={{ width: '100%' }} onChange={(value) => handleTotalQuantityChange(name, value)} />
+                      </Form.Item>
+                    )
+                  }}
                 </Form.Item>
                 <Form.Item name={[name, 'medicinehint']} label="Hint" style={{ flex: '1 1 160px' }}>
                   <Input placeholder="Before meal" />
