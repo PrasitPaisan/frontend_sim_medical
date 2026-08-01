@@ -721,6 +721,22 @@ body {
   gap: 8px;
 }
 
+.machine-sim-card__controls .ant-input {
+  flex: 1;
+}
+
+.machine-sim-card__results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.machine-sim-card__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .machine-sim-card__complete {
   display: flex;
   align-items: center;

@@ -15,6 +15,10 @@ type PrescriptionDetail = {
   hpmtypeunit: string | null
   dispense_type: string | null
   priority: number
+  dosage?: number | null
+  dosageunit?: string | null
+  performfreqdetail?: string | null
+  performfreqprint?: string | null
 }
 
 type PrescriptionItem = {
@@ -30,6 +34,14 @@ type PrescriptionItem = {
   pre_state: number
   created_at: string
   updated_at: string
+  // Set once NZP360 has confirmed a standalone SendPrescription (split-send
+  // flow) — independent of pre_state, which only tracks RB1500's conveyor
+  // entry. Null means NZP360 hasn't been sent yet, via either flow.
+  nzp360_sent_at: string | null
+  // RB1500 SendPrescription's header-level priority (0 Vending, 1 Stat, 2
+  // New, 3 Discharge, 4 Continue) — see lib/orderPriority.ts. Distinct from
+  // each medicine's own PrescriptionDetail.priority below.
+  priority: number | null
   details: PrescriptionDetail[]
 }
 
@@ -130,6 +142,17 @@ export function usePrescriptions() {
     setSelectedId((current) => (current !== null && ids.includes(current) ? null : current))
   }
 
+  // Sending NZP360 alone doesn't change pre_state, so the prescription stays
+  // in this list — just flip the local nzp360_sent_at flag so the "Sent"
+  // status tag updates without a full reload.
+  const markNzp360Sent = (ids: number[]) => {
+    setPrescriptions((current) =>
+      current.map((item) =>
+        ids.includes(item.id) ? { ...item, nzp360_sent_at: new Date().toISOString() } : item,
+      ),
+    )
+  }
+
   return {
     prescriptions,
     total,
@@ -143,6 +166,7 @@ export function usePrescriptions() {
     error,
     loadPrescriptions,
     removePrescriptions,
+    markNzp360Sent,
     fetchPrescriptionIds,
     nextFetchInSeconds,
   }

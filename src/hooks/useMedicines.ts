@@ -24,6 +24,8 @@ export type Medicine = {
   med_unit_capacity: number | null
   /** 'pending' = saved locally only, not yet confirmed by the real machine; 'synced' = machine accepted it. */
   sync_status: 'pending' | 'synced'
+  /** RB1500 SendMedicine's desc_code: electronic medication tracking code(s), each 7 digits, multiple codes joined with '|'. */
+  desc_code: string | null
 }
 
 export type MedicineFormValues = {
@@ -45,6 +47,8 @@ export type MedicineFormValues = {
   dispense_type?: string
   /** NZP360-only field (med_unit_capacity in its DataTable) — ignored by RB1500's SendMedicine contract. */
   med_unit_capacity?: number
+  /** RB1500-only field: electronic medication tracking code(s), each 7 digits, multiple codes joined with '|'. */
+  desc_code?: string
 }
 
 export type TargetMachine = 'RB1500' | 'NZP360'

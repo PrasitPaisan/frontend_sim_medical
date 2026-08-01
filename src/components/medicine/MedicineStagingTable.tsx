@@ -73,6 +73,7 @@ function renderDetails(record: StagedMedicine) {
     { label: 'Position', value: record.medposition },
     { label: 'Batch', value: record.med_batch },
     { label: 'Expiry', value: record.validate_time },
+    { label: 'Tracking Code (desc_code)', value: record.desc_code },
   ]
 
   const nzp360Only: DetailRow[] = [{ label: 'Unit Capacity', value: record.med_unit_capacity }]

@@ -31,6 +31,7 @@ function toStagedMedicine(medicine: Medicine): StagedMedicine {
     validate_time: medicine.validate_time ?? undefined,
     med_unit_capacity: medicine.med_unit_capacity ?? undefined,
     dispense_type: medicine.dispense_type,
+    desc_code: medicine.desc_code ?? undefined,
     _key: `db-${medicine.id}-${Date.now()}-${Math.random()}`,
   }
 }

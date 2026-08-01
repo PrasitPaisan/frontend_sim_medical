@@ -19,7 +19,21 @@ const columns = [
     ),
   },
   { title: 'Unit', dataIndex: 'medunit', key: 'medunit' },
-  { title: 'Qty', dataIndex: 'medicinenum', key: 'medicinenum', align: 'right' as const },
+  {
+    title: 'Qty',
+    key: 'qty',
+    align: 'right' as const,
+    render: (_: unknown, detail: PrescriptionDetail) => (
+      <div>
+        <div>
+          {detail.medicinenum} {detail.typeunit ?? ''}
+        </div>
+        <div className="medicine-list__subtext">
+          + {detail.medicineheteromorphism} {detail.hpmtypeunit ?? ''}
+        </div>
+      </div>
+    ),
+  },
   {
     title: 'Priority',
     dataIndex: 'priority',
@@ -36,6 +50,21 @@ const columns = [
         <div>
           <div>{detail.typeunit}</div>
           {detail.hpmtypeunit ? <div className="medicine-list__subtext">{detail.hpmtypeunit}</div> : null}
+        </div>
+      ) : (
+        '—'
+      ),
+  },
+  {
+    title: 'Frequency',
+    key: 'frequency',
+    render: (_: unknown, detail: PrescriptionDetail) =>
+      detail.performfreqdetail ? (
+        <div>
+          <div>{detail.performfreqdetail}</div>
+          {detail.performfreqprint ? (
+            <div className="medicine-list__subtext">{detail.performfreqprint}</div>
+          ) : null}
         </div>
       ) : (
         '—'

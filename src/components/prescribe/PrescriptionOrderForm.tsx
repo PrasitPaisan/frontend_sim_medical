@@ -4,8 +4,9 @@ import type { Medicine } from '../../hooks/useMedicines'
 import type { Department } from '../../hooks/useDepartments'
 import type { PrescribeOrderInput, PrescribeOrderResult } from '../../hooks/usePrescribeOrder'
 import { PRIORITY_OPTIONS } from '../../lib/priority'
+import { ORDER_PRIORITY_OPTIONS } from '../../lib/orderPriority'
 import { getDispenseTypeLabel } from '../../lib/dispenseType'
-import { splitQuantity } from '../../lib/quantity'
+import { computeSuggestedTotalQuantity, splitQuantity } from '../../lib/quantity'
 
 const MOCK_FIRST_NAMES = ['สมชาย', 'สมหญิง', 'วิชัย', 'อรทัย', 'ประยุทธ์', 'กัลยา', 'ธนากร', 'วิภา', 'ปิติ', 'มาลี']
 const MOCK_LAST_NAMES = ['ใจดี', 'รักษาดี', 'เจริญสุข', 'ศรีสุข', 'บุญมาก', 'ทองแท้', 'วงศ์สว่าง', 'ยืนยง', 'แสงทอง', 'พูลสวัสดิ์']
@@ -22,6 +23,11 @@ const MOCK_PERFORM_FREQS: Array<{ detail: string; freq: string; print: string }>
 
 const randomItem = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)]
 const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
+// DOSAGE_PER_UNIT is a fraction of dosageunit per dose (1 = whole tablet,
+// 0.5 = half) — most real orders are whole tablets, so this mostly returns
+// 1 with an occasional half, rather than a uniform random fraction that
+// would make "half a tablet" the common case.
+const randomDosagePerUnit = () => (Math.random() < 0.85 ? '1.0' : '0.5')
 const pad2 = (value: number) => String(value).padStart(2, '0')
 const randomClockTime = () => `${pad2(randomInt(0, 23))}:${pad2(randomInt(0, 59))}:${pad2(randomInt(0, 59))}`
 // Matches the sample envelope's odd date+time format (e.g. "2017032909:44:30"
@@ -83,6 +89,9 @@ type PrescriptionOrderFormValues = {
   administration?: string
   repeatindicator?: string
   deptcode?: string
+  // Header-level RB1500 SendPrescription priority — distinct from each
+  // drug row's own priority field above (per-medicine, unrelated scheme).
+  priority?: number
   drugs: DrugRow[]
 }
 
@@ -164,6 +173,27 @@ export default function PrescriptionOrderForm({
     form.setFieldValue('drugs', [...drugs])
   }
 
+  // Suggests Total Quantity from Dosage × doses/day (parsed from Perform
+  // Freq Detail) × Repeat Indicator (days ordered) — a convenience, not a
+  // forced value, since the frequency-string parsing is best-effort (see
+  // lib/quantity.ts) and can't cover every DB usage code.
+  const handleSuggestQuantity = (rowIndex: number) => {
+    const drugs = form.getFieldValue('drugs') as DrugRow[]
+    const row = drugs?.[rowIndex]
+    const repeatindicator = form.getFieldValue('repeatindicator') as string | undefined
+    const dosage = row?.dosage ? Number(row.dosage) : undefined
+    const suggested = computeSuggestedTotalQuantity(dosage, row?.performfreqdetail, repeatindicator)
+
+    if (suggested === undefined) {
+      message.warning(
+        'Cannot suggest a quantity — need Dosage, a parseable Perform Freq Detail (e.g. 8-20, qd, qn), and Repeat Indicator (days) all filled in for this row.',
+      )
+      return
+    }
+
+    handleTotalQuantityChange(rowIndex, suggested)
+  }
+
   // Picking a department autofills both the free-text departmentname (used
   // by RB1500 and shown across the app) and deptcode (NZP360-only) from the
   // same department_dictionary row, so they can never disagree.
@@ -217,7 +247,7 @@ export default function PrescriptionOrderForm({
         drugpycode: medicine.pycode,
         dosage: String(randomInt(1, 2)),
         dosageunit: randomItem(MOCK_DOSAGE_UNITS),
-        dosageperunit: (randomInt(1, 5) / 10).toFixed(1),
+        dosageperunit: randomDosagePerUnit(),
         dispensingtime: randomDateTimeStamp(),
         performtime: randomDateTimeStamp(),
         performfreqdetail: freq.detail,
@@ -236,7 +266,7 @@ export default function PrescriptionOrderForm({
       patientsex: Math.random() > 0.5 ? 1 : 0,
       prescriptiondoctorname: randomItem(MOCK_DOCTOR_NAMES),
       prescriptionhint: randomItem(MOCK_HINTS),
-      fetchwindow: randomInt(1, 6),
+      fetchwindow: 1,
       departmentId: department?.id,
       departmentname: department?.dept_name,
       deptcode: department?.dept_code,
@@ -246,6 +276,7 @@ export default function PrescriptionOrderForm({
       doctorid: `D${randomInt(1000, 9999)}`,
       administration: randomItem(MOCK_ADMINISTRATIONS),
       repeatindicator: '1',
+      priority: randomItem(ORDER_PRIORITY_OPTIONS).value,
       drugs,
     })
 
@@ -284,6 +315,7 @@ export default function PrescriptionOrderForm({
       administration: values.administration,
       repeatindicator: values.repeatindicator,
       deptcode: values.deptcode,
+      priority: values.priority,
       details: values.drugs.map((row) => ({
         medhisid: row.medhisid!,
         medunit: row.medunit!,
@@ -319,7 +351,7 @@ export default function PrescriptionOrderForm({
   }
 
   return (
-    <Form form={form} layout="vertical" onFinish={(values) => void handleFinish(values)} initialValues={{ patientsex: 1, fetchwindow: 1 }}>
+    <Form form={form} layout="vertical" onFinish={(values) => void handleFinish(values)} initialValues={{ patientsex: 1, fetchwindow: 1, priority: 2 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <Button icon={<ThunderboltOutlined />} onClick={handleMockup}>
           Mockup
@@ -373,10 +405,16 @@ export default function PrescriptionOrderForm({
           <Input disabled placeholder="Pick a department above" />
         </Form.Item>
         <Form.Item name="fetchwindow" label="Fetch Window (pickup counter)" rules={[{ required: true }]}>
-          <InputNumber min={1} style={{ width: '100%' }} />
+          <InputNumber min={1} max={1} disabled style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item name="prescriptionhint" label="Prescription Hint">
           <Input placeholder="Before meal" />
+        </Form.Item>
+        {/* Header-level RB1500 SendPrescription priority — one code for the
+            whole order, not per medicine (each drug row below has its own
+            separate Priority field, a different scheme). */}
+        <Form.Item name="priority" label="Priority (order type)">
+          <Select options={ORDER_PRIORITY_OPTIONS} />
         </Form.Item>
       </div>
 
@@ -465,17 +503,23 @@ export default function PrescriptionOrderForm({
                     const typeunit = row?.typeunit || 'box'
                     return (
                       <Form.Item
-                        name={[name, 'totalQuantity']}
                         label={`Total Quantity (${hpmtypeunit})`}
-                        rules={[{ required: true, message: 'Required' }]}
+                        required
                         extra={
                           row?.boxmaxnum
                             ? `= ${row.medicinenum ?? 0} ${typeunit} + ${row.medicineheteromorphism ?? 0} ${hpmtypeunit} (${row.boxmaxnum} ${hpmtypeunit}/${typeunit})`
                             : 'Pick a medicine first'
                         }
-                        style={{ flex: '1 1 220px' }}
+                        style={{ flex: '1 1 260px' }}
                       >
-                        <InputNumber min={1} style={{ width: '100%' }} onChange={(value) => handleTotalQuantityChange(name, value)} />
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <Form.Item name={[name, 'totalQuantity']} rules={[{ required: true, message: 'Required' }]} noStyle>
+                            <InputNumber min={1} style={{ width: '100%' }} onChange={(value) => handleTotalQuantityChange(name, value)} />
+                          </Form.Item>
+                          <Button size="small" onClick={() => handleSuggestQuantity(name)}>
+                            Suggest
+                          </Button>
+                        </div>
                       </Form.Item>
                     )
                   }}
@@ -502,8 +546,8 @@ export default function PrescriptionOrderForm({
                   <Form.Item name={[name, 'dosageunit']} label="Dosage Unit" style={{ flex: '1 1 100px' }}>
                     <Input placeholder="Tablet" />
                   </Form.Item>
-                  <Form.Item name={[name, 'dosageperunit']} label="Dosage Per Unit" style={{ flex: '1 1 120px' }}>
-                    <Input placeholder="0.2" />
+                  <Form.Item name={[name, 'dosageperunit']} label="Dosage Per Unit (1 = whole, 0.5 = half)" style={{ flex: '1 1 120px' }}>
+                    <Input placeholder="1.0" />
                   </Form.Item>
                   <Form.Item name={[name, 'dispensingtime']} label="Dispensing Time" style={{ flex: '1 1 160px' }}>
                     <Input placeholder="2017032909:44:30" />
