@@ -45,6 +45,10 @@ export type PrescribeOrderInput = {
   administration?: string
   repeatindicator?: string
   deptcode?: string
+  // RB1500 SendPrescription's header-level priority (0 Vending, 1 Stat, 2
+  // New, 3 Discharge, 4 Continue) — see lib/orderPriority.ts. Distinct from
+  // each detail row's own priority above.
+  priority?: number
   details: PrescribeDetailInput[]
 }
 

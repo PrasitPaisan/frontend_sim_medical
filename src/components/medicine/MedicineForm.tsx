@@ -91,6 +91,14 @@ export default function MedicineForm({ onAdd }: MedicineFormProps) {
           <Form.Item name="validate_time" label="Expiry Date">
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
+          <Form.Item
+            name="desc_code"
+            label="Tracking Code (desc_code)"
+            tooltip="Electronic medication tracking code(s), each 7 digits. Separate multiple codes with |"
+            rules={[{ pattern: /^\d{7}(\|\d{7})*$/, message: 'Each code must be 7 digits, separated by |' }]}
+          >
+            <Input placeholder="1234567|7654321" />
+          </Form.Item>
         </div>
       </div>
 

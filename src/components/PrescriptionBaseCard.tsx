@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Tag } from 'antd'
 import type { PrescriptionItem } from '../hooks/usePrescriptions'
-import { getPrescriptionPriority, getPriorityColor, getPriorityLabel } from '../lib/priority'
+import { getOrderPriorityColor, getOrderPriorityLabel } from '../lib/orderPriority'
 
 type PrescriptionBaseCardProps = {
   item: PrescriptionItem
@@ -13,7 +13,7 @@ type PrescriptionBaseCardProps = {
   headerEnd?: ReactNode
   children?: ReactNode
   className?: string
-  /** Shows the prescription's overall priority (highest among its medicines) as a tag next to the patient name. */
+  /** Shows the prescription's header-level priority (prescription_header.priority) as a tag next to the patient name. */
   showPriorityTag?: boolean
 }
 
@@ -27,8 +27,6 @@ export default function PrescriptionBaseCard({
   className = '',
   showPriorityTag = false,
 }: PrescriptionBaseCardProps) {
-  const priority = getPrescriptionPriority(item.details)
-
   return (
     <div
       className={`prescription-card ${active ? 'prescription-card--active' : ''} ${className}`.trim()}
@@ -41,8 +39,8 @@ export default function PrescriptionBaseCard({
             <h4 className="prescription-card__title">
               {item.patientname}
               {showPriorityTag ? (
-                <Tag className="prescription-card__priority-tag" color={getPriorityColor(priority)}>
-                  {getPriorityLabel(priority)}
+                <Tag className="prescription-card__priority-tag" color={getOrderPriorityColor(item.priority)}>
+                  {getOrderPriorityLabel(item.priority)}
                 </Tag>
               ) : null}
             </h4>
