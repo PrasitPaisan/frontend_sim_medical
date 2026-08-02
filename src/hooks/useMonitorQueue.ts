@@ -3,7 +3,7 @@ import { api } from '../lib/api'
 
 const POLL_INTERVAL_MS = 10_000
 
-// Patients currently called for pickup (basket station_status = 7) — this is
+// Patients currently called for pickup (basket station_status = 8) — this is
 // a public-facing board, so it polls faster than the internal tracking pages.
 export type CalledPrescription = {
   prescriptionhisid: string

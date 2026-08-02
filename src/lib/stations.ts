@@ -34,14 +34,20 @@ export const PIPELINE_STATIONS: Station[] = [
     dispenseType: 'nzp360',
   },
   { key: 'cobot', state: 5, labelEn: 'COBOT', labelTh: 'COBOT', dispenseType: 'cobot' },
-  { key: 'pharmacist-recheck', state: 6, labelEn: 'Pharmacist Recheck', labelTh: 'เภสัชกรตรวจสอบซ้ำ' },
-  { key: 'call-patient', state: 7, labelEn: 'Call Patient for Pickup', labelTh: 'เรียกผู้ป่วยมารับยา' },
-  { key: 'patient-received', state: 8, labelEn: 'Patient Received Medicine', labelTh: 'ผู้ป่วยรับยาเสร็จสิ้น' },
+  // Distinct from 'pharmacist-recheck' below: this is the basket physically
+  // arriving at the recheck point (mapped from RB1500's real QueryBasketPosition
+  // Position=6 "End" — see lib/basketPosition.ts), NOT the pharmacist having
+  // actually verified it yet. Only 'pharmacist-recheck' triggers completion
+  // (RECHECK_STATION_STATUS in baskets.service.ts) — arriving here must not.
+  { key: 'recheck-arrived', state: 6, labelEn: 'Arrived at Recheck Point', labelTh: 'มาถึงจุดตรวจสอบ' },
+  { key: 'pharmacist-recheck', state: 7, labelEn: 'Pharmacist Recheck', labelTh: 'เภสัชกรตรวจสอบซ้ำ' },
+  { key: 'call-patient', state: 8, labelEn: 'Call Patient for Pickup', labelTh: 'เรียกผู้ป่วยมารับยา' },
+  { key: 'patient-received', state: 9, labelEn: 'Patient Received Medicine', labelTh: 'ผู้ป่วยรับยาเสร็จสิ้น' },
 ]
 
 // Process Tracking only cares about the internal dispensing pipeline, up
-// through pharmacist recheck (station 6) — that's where it treats a
-// prescription as "Completed". Call-patient (7) and patient-received (8) are
+// through pharmacist recheck (station 7) — that's where it treats a
+// prescription as "Completed". Call-patient (8) and patient-received (9) are
 // patient-facing states meant for the Monitor Queue display instead, so they
 // are deliberately excluded here even though they exist in PIPELINE_STATIONS.
 const TRACKING_FINAL_INDEX = PIPELINE_STATIONS.findIndex((station) => station.key === 'pharmacist-recheck')

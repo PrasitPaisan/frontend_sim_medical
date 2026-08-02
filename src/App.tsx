@@ -4,6 +4,7 @@ import {
   ApartmentOutlined,
   ApiOutlined,
   AuditOutlined,
+  BulbOutlined,
   DashboardOutlined,
   ExperimentOutlined,
   FormOutlined,
@@ -11,6 +12,8 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
+  RobotOutlined,
+  SafetyCertificateOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
 import './App.css'
@@ -22,6 +25,9 @@ import MachineSimPage from './pages/MachineSimPage'
 import AddMedicinePage from './pages/AddMedicinePage'
 import PrescribeMedicinePage from './pages/PrescribeMedicinePage'
 import AddDepartmentPage from './pages/AddDepartmentPage'
+import CobotTaskPage from './pages/CobotTaskPage'
+import PharmacistRecheckPage from './pages/PharmacistRecheckPage'
+import QueryBasketPage from './pages/QueryBasketPage'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -69,6 +75,12 @@ function App() {
         return <MachineInventoryPage />
       case 'machine-sim':
         return <MachineSimPage />
+      case 'cobot-task':
+        return <CobotTaskPage />
+      case 'pharmacist-recheck':
+        return <PharmacistRecheckPage />
+      case 'query-basket':
+        return <QueryBasketPage />
       case 'add-medicine':
         return <AddMedicinePage />
       case 'add-department':
@@ -140,6 +152,9 @@ function App() {
               { key: 'process', icon: <AuditOutlined />, label: 'Process Tracking' },
               { key: 'inventory', icon: <ToolOutlined />, label: 'Machine Inventory' },
               { key: 'machine-sim', icon: <ApiOutlined />, label: 'Machine Sim' },
+              { key: 'cobot-task', icon: <RobotOutlined />, label: 'COBOT Task Management' },
+              { key: 'pharmacist-recheck', icon: <SafetyCertificateOutlined />, label: 'Pharmacist Recheck' },
+              { key: 'query-basket', icon: <BulbOutlined />, label: 'Query Basket' },
               { key: 'add-medicine', icon: <MedicineBoxOutlined />, label: 'Add Medicine to Machine' },
               { key: 'add-department', icon: <ApartmentOutlined />, label: 'Add Department' },
             ]}

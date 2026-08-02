@@ -18,6 +18,10 @@ type MachineBatchPreview = {
   prescriptionIds: Array<number | undefined>
   mznos: Array<string | undefined>
   prescriptionHisIds: Array<string | undefined>
+  // Aligned index-for-index with the arrays above — which prescriptions in
+  // this dispatch order need COBOT (see interleaveCobotPrescriptions on the
+  // backend). Absent on nzp360Batches, since COBOT is an RB1500-only concern.
+  cobotFlags?: boolean[]
   xml: string
 }
 
@@ -43,11 +47,19 @@ type SplitPreviewResponse = {
 
 type SendTarget = 'both' | 'rb1500' | 'nzp360'
 
+type SendResultItem = {
+  id?: number
+  mzno?: string
+  ok: boolean
+  error?: string
+}
+
 type SendResult = {
   ok?: boolean
   message?: string
   updatedIds?: number[]
   sentIds?: number[]
+  results?: SendResultItem[]
 }
 
 export default function PrescriptionPage() {
@@ -187,6 +199,38 @@ export default function PrescriptionPage() {
     setCardBusy(null)
   }
 
+  // Send success/failure is the one outcome a pharmacist really needs to
+  // notice — a corner toast is too easy to miss, so this uses a centered
+  // Modal instead, with the per-prescription failure reasons spelled out
+  // rather than just a summary count.
+  const showSendResultModal = (
+    kind: 'success' | 'warning' | 'error',
+    title: string,
+    resultMessage: string | undefined,
+    failedItems: SendResultItem[],
+  ) => {
+    const modalFn = kind === 'success' ? Modal.success : kind === 'warning' ? Modal.warning : Modal.error
+    modalFn({
+      title,
+      width: 480,
+      centered: true,
+      content: (
+        <div>
+          <p style={{ fontSize: 16 }}>{resultMessage}</p>
+          {failedItems.length > 0 ? (
+            <ul style={{ paddingLeft: 20, margin: 0 }}>
+              {failedItems.map((item, index) => (
+                <li key={item.id ?? index}>
+                  {item.mzno || `#${item.id ?? '?'}`}: {item.error || 'Unknown error'}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ),
+    })
+  }
+
   const handleCopyPreview = (xml: string) => {
     void navigator.clipboard.writeText(xml).then(
       () => message.success('SOAP body copied to clipboard'),
@@ -206,14 +250,16 @@ export default function PrescriptionPage() {
         target === 'both' ? '/prescriptions/send-batch' : target === 'rb1500' ? '/prescriptions/send-rb1500' : '/prescriptions/send-nzp360'
       const response = await api.post<SendResult>(endpoint, { prescriptions: prescriptionsToSend })
 
+      const failedItems = (response.results ?? []).filter((item) => !item.ok)
+
       if (target === 'nzp360') {
         // NZP360 alone never touches pre_state/basket — prescriptions stay in
         // this list, just flagged as sent, instead of leaving the queue.
         const sentIds = response.sentIds ?? []
         if (response.ok === false) {
-          message.warning(response.message || 'Some prescriptions could not be sent to NZP360')
+          showSendResultModal('warning', 'Sent to NZP360 — some failed', response.message, failedItems)
         } else {
-          message.success(response.message || `Sent ${sentIds.length} prescription(s) to NZP360`)
+          showSendResultModal('success', 'Sent to NZP360', response.message || `Sent ${sentIds.length} prescription(s) to NZP360`, [])
         }
         if (sentIds.length > 0) markNzp360Sent(sentIds)
       } else {
@@ -221,9 +267,9 @@ export default function PrescriptionPage() {
         // those ids leave Prescription Managements; everything else stays for retry.
         const updatedIds = response.updatedIds ?? []
         if (response.ok === false) {
-          message.warning(response.message || 'Some prescriptions could not be sent to the dispensing machine')
+          showSendResultModal('warning', 'Sent to the dispensing machine — some failed', response.message, failedItems)
         } else {
-          message.success(response.message || `Sent ${updatedIds.length} prescription(s)`)
+          showSendResultModal('success', 'Sent to the dispensing machine', response.message || `Sent ${updatedIds.length} prescription(s)`, [])
         }
         if (updatedIds.length > 0) {
           removePrescriptions(updatedIds)
@@ -231,7 +277,7 @@ export default function PrescriptionPage() {
         }
       }
     } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Unable to send prescriptions')
+      showSendResultModal('error', 'Unable to send prescriptions', err instanceof Error ? err.message : 'Unknown error', [])
     } finally {
       setSendingBatch(false)
       setPendingPrescriptions(null)
@@ -304,10 +350,29 @@ export default function PrescriptionPage() {
                         <Tag style={{ marginLeft: 8 }}>
                           {batch.mznos.filter(Boolean).join(', ') || batch.prescriptionHisIds.filter(Boolean).join(', ')}
                         </Tag>
+                        {(batch.cobotFlags?.filter(Boolean).length ?? 0) > 0 ? (
+                          <Tag color="purple">{batch.cobotFlags!.filter(Boolean).length} COBOT</Tag>
+                        ) : null}
                       </span>
                     ),
                     children: (
                       <>
+                        {/* Dispatch order for this batch, numbered — COBOT
+                            prescriptions are highlighted so it's clear at a
+                            glance where interleaveCobotPrescriptions placed
+                            them, without having to read the raw XML. */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                          {batch.prescriptionIds.map((id, i) => {
+                            const isCobot = batch.cobotFlags?.[i] ?? false
+                            const label = batch.mznos[i] ?? batch.prescriptionHisIds[i] ?? id
+                            return (
+                              <Tag key={id ?? i} color={isCobot ? 'purple' : 'default'}>
+                                #{i + 1} {label}
+                                {isCobot ? ' · COBOT' : ''}
+                              </Tag>
+                            )
+                          })}
+                        </div>
                         <pre className="medicine-preview__xml">{batch.xml}</pre>
                         <Button size="small" onClick={() => handleCopyPreview(batch.xml)}>
                           Copy RB1500 batch XML

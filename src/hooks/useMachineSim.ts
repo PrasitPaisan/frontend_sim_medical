@@ -94,8 +94,11 @@ export function useMachineSim() {
   // Tells the machine the pharmacist has recheck-verified this prescription
   // as fully dispensed (UpdateReadyPrescriptionState — see
   // MachineService.updateReadyPrescriptionStateOnRB1500) — expected to clear
-  // it out of the machine's own "ready for pickup" queue. No database write
-  // on either side, same as eliminatePrescription above.
+  // it out of the machine's own "ready for pickup" queue. This is Machine
+  // Sim's machine-only test action: no database write on either side. The
+  // Pharmacist Recheck page's "Confirm Dispensing" action calls the same
+  // SOAP operation via a *different* endpoint (/machine/confirm-recheck)
+  // that also marks pre_state = 1 — see useConfirmRecheck.
   const confirmDispensingComplete = async (prescriptionhisid: string): Promise<MachineCallResult> => {
     try {
       const result = await api.post<{ ok: boolean; message?: string; raw?: string }>(
