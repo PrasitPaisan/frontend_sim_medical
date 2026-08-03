@@ -58,16 +58,25 @@ export function usePrescriptions() {
   const [prescriptions, setPrescriptions] = useState<PrescriptionItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  // Narrows the list to prescriptions already split-sent to NZP360 alone
+  // (nzp360_sent_at set) but still waiting on RB1500 — see
+  // PrescriptionsService.findAll's nzp360SentOnly param.
+  const [nzp360SentOnly, setNzp360SentOnly] = useState(false)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [nextFetchInSeconds, setNextFetchInSeconds] = useState(120)
   const nextFetchAtRef = useRef<number>(Date.now() + 120_000)
   const pageRef = useRef(page)
+  const nzp360SentOnlyRef = useRef(nzp360SentOnly)
 
   useEffect(() => {
     pageRef.current = page
   }, [page])
+
+  useEffect(() => {
+    nzp360SentOnlyRef.current = nzp360SentOnly
+  }, [nzp360SentOnly])
 
   const resetTimer = () => {
     nextFetchAtRef.current = Date.now() + 120_000
@@ -80,7 +89,7 @@ export function usePrescriptions() {
 
     try {
       const data = await api.get<PrescriptionListResponse>(
-        `/prescriptions?page=${pageRef.current}&pageSize=${PAGE_SIZE}`,
+        `/prescriptions?page=${pageRef.current}&pageSize=${PAGE_SIZE}&nzp360SentOnly=${nzp360SentOnlyRef.current}`,
       )
 
       setPrescriptions(data.items)
@@ -99,10 +108,14 @@ export function usePrescriptions() {
   // Bulk-select support: fetches just the ids of the first `limit`
   // prescriptions (same Stat-first/newest ordering as the list itself) so
   // the toolbar's "select first N" can select across pages without pulling
-  // every prescription's full medicine details.
+  // every prescription's full medicine details. Must mirror the current
+  // nzp360SentOnly filter — otherwise "select first N" while that filter is
+  // active would silently select ids the pharmacist can't even see on screen.
   const fetchPrescriptionIds = async (limit: number): Promise<number[]> => {
     try {
-      return await api.get<number[]>(`/prescriptions/ids?limit=${limit}`)
+      return await api.get<number[]>(
+        `/prescriptions/ids?limit=${limit}&nzp360SentOnly=${nzp360SentOnlyRef.current}`,
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch prescription ids')
       return []
@@ -130,6 +143,21 @@ export function usePrescriptions() {
     void loadPrescriptions()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
+
+  // Toggling the filter always jumps back to page 1 — the old page number
+  // may not even exist in the filtered result set. Updates the ref
+  // synchronously (not just via its mirroring useEffect above) since a
+  // same-page toggle calls loadPrescriptions directly, before that effect
+  // would otherwise have run.
+  const setNzp360SentOnlyFiltered = (value: boolean) => {
+    setNzp360SentOnly(value)
+    nzp360SentOnlyRef.current = value
+    if (page === 1) {
+      void loadPrescriptions()
+    } else {
+      setPage(1)
+    }
+  }
 
   const selectedPrescription = useMemo(
     () => prescriptions.find((item) => item.id === selectedId) ?? null,
@@ -159,6 +187,8 @@ export function usePrescriptions() {
     page,
     pageSize: PAGE_SIZE,
     setPage,
+    nzp360SentOnly,
+    setNzp360SentOnly: setNzp360SentOnlyFiltered,
     selectedId,
     setSelectedId,
     selectedPrescription,

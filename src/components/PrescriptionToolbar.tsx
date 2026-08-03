@@ -17,6 +17,8 @@ type PrescriptionToolbarProps = {
   onSelectFirstN: (n: number) => void
   onClearSelection: () => void
   selecting: boolean
+  nzp360SentOnly: boolean
+  onToggleNzp360SentOnly: (value: boolean) => void
 }
 
 export default function PrescriptionToolbar({
@@ -33,6 +35,8 @@ export default function PrescriptionToolbar({
   onSelectFirstN,
   onClearSelection,
   selecting,
+  nzp360SentOnly,
+  onToggleNzp360SentOnly,
 }: PrescriptionToolbarProps) {
   const [customN, setCustomN] = useState<number | null>(null)
 
@@ -87,6 +91,22 @@ export default function PrescriptionToolbar({
         </Button>
         <Button size="small" onClick={onClearSelection} disabled={selectedCount === 0}>
           Clear selection
+        </Button>
+      </div>
+
+      {/* Prescriptions split-sent to NZP360 alone (nzp360_sent_at set) stay
+          in this list waiting on RB1500 — they can land anywhere across
+          pages, so this filters down to just those rather than relying on
+          spotting the "Sent to NZP360" tag while scanning every card. Kept
+          in its own row, small/default styling, so it doesn't compete
+          visually with the primary Send selected action above. */}
+      <div className="prescription-toolbar__select-row">
+        <Button
+          size="small"
+          type={nzp360SentOnly ? 'primary' : 'default'}
+          onClick={() => onToggleNzp360SentOnly(!nzp360SentOnly)}
+        >
+          {nzp360SentOnly ? 'Showing: NZP360 sent, awaiting RB1500' : 'Show NZP360 sent, awaiting RB1500'}
         </Button>
       </div>
 

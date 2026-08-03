@@ -69,6 +69,8 @@ export default function PrescriptionPage() {
     page,
     pageSize,
     setPage,
+    nzp360SentOnly,
+    setNzp360SentOnly,
     selectedId,
     setSelectedId,
     loading,
@@ -301,6 +303,8 @@ export default function PrescriptionPage() {
         onSelectFirstN={(n) => void handleSelectFirstN(n)}
         onClearSelection={handleClearSelection}
         selecting={selecting}
+        nzp360SentOnly={nzp360SentOnly}
+        onToggleNzp360SentOnly={setNzp360SentOnly}
       />
 
       <Modal
