@@ -24,12 +24,23 @@ export type QueryReadyResult = {
   queriedAt: string
 }
 
-// Mirrors MachineService.getMachineStatusFromRB1500's response shape.
+// Mirrors NZP360 QueryMachineState's extra PartList/PartItem breakdown, which
+// RB1500's QueryMachineState doesn't have.
+export type MachinePart = {
+  partName?: string
+  partId?: string
+  partState?: string
+  partMessage?: string
+}
+
+// Mirrors MachineService.getMachineStatusFromRB1500/getMachineStatusFromNZP360's
+// response shape — parts is only ever populated for NZP360.
 export type MachineStateResult = {
   ok: boolean
   message: string
   machineState?: string
   machineMessage?: string
+  parts?: MachinePart[]
   queriedAt: string
 }
 
@@ -143,23 +154,30 @@ export function useMachineSim() {
     }
   }
 
-  // Asks RB1500 for its own health/online status (QueryMachineState) — read-only,
-  // no database write on either side, same as queryReadyPrescriptions.
-  const queryMachineState = async (machineId: number): Promise<MachineStateResult> => {
+  // Asks the machine for its own health/online status (QueryMachineState) —
+  // read-only, no database write on either side, same as
+  // queryReadyPrescriptions. machine defaults to RB1500's original endpoint;
+  // pass 'NZP360' to hit its parallel /machine/status-nzp360 endpoint (same
+  // shape, plus an NZP360-only parts breakdown — see
+  // MachineService.getMachineStatusFromNZP360).
+  const queryMachineState = async (machineId: number, machine: 'RB1500' | 'NZP360' = 'RB1500'): Promise<MachineStateResult> => {
+    const endpoint = machine === 'NZP360' ? '/machine/status-nzp360' : '/machine/status'
     try {
       const result = await api.get<{
         ok: boolean
         message?: string
         machineState?: string
         machineMessage?: string
+        parts?: MachinePart[]
         queriedAt?: string
-      }>(`/machine/status?machineId=${machineId}`)
+      }>(`${endpoint}?machineId=${machineId}`)
 
       return {
         ok: result.ok,
         message: result.message || (result.ok ? 'Fetched machine status' : 'Machine rejected the request'),
         machineState: result.machineState,
         machineMessage: result.machineMessage,
+        parts: result.parts,
         queriedAt: result.queriedAt ?? new Date().toISOString(),
       }
     } catch (err) {

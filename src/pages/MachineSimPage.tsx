@@ -56,7 +56,8 @@ export default function MachineSimPage() {
       <div className="machine-sim-section">
         <h5 className="machine-sim-section__title">Machine Status</h5>
         <div className="machine-sim-grid">
-          <MachineStatusCard />
+          <MachineStatusCard machine="RB1500" />
+          <MachineStatusCard machine="NZP360" />
         </div>
       </div>
 

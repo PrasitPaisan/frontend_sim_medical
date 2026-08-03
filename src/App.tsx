@@ -8,6 +8,7 @@ import {
   DashboardOutlined,
   ExperimentOutlined,
   FormOutlined,
+  InboxOutlined,
   MedicineBoxOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -28,6 +29,7 @@ import AddDepartmentPage from './pages/AddDepartmentPage'
 import CobotTaskPage from './pages/CobotTaskPage'
 import PharmacistRecheckPage from './pages/PharmacistRecheckPage'
 import QueryBasketPage from './pages/QueryBasketPage'
+import PackagedPouchesPage from './pages/PackagedPouchesPage'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -81,6 +83,8 @@ function App() {
         return <PharmacistRecheckPage />
       case 'query-basket':
         return <QueryBasketPage />
+      case 'packaged-pouches':
+        return <PackagedPouchesPage />
       case 'add-medicine':
         return <AddMedicinePage />
       case 'add-department':
@@ -155,6 +159,7 @@ function App() {
               { key: 'cobot-task', icon: <RobotOutlined />, label: 'COBOT Task Management' },
               { key: 'pharmacist-recheck', icon: <SafetyCertificateOutlined />, label: 'Pharmacist Recheck' },
               { key: 'query-basket', icon: <BulbOutlined />, label: 'Query Basket' },
+              { key: 'packaged-pouches', icon: <InboxOutlined />, label: 'Packaged Pouches (NZP360)' },
               { key: 'add-medicine', icon: <MedicineBoxOutlined />, label: 'Add Medicine to Machine' },
               { key: 'add-department', icon: <ApartmentOutlined />, label: 'Add Department' },
             ]}

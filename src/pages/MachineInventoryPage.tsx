@@ -1,12 +1,16 @@
 import PageShell from '../components/PageShell'
+import InventoryPanel from '../components/inventory/InventoryPanel'
+import { Tabs } from 'antd'
 
 export default function MachineInventoryPage() {
   return (
     <PageShell title="Machine Inventory" subtitle="Monitor devices, status, and availability">
-      <div className="placeholder-card">
-        <h4>Inventory overview</h4>
-        <p>Content for Machine Inventory will be added here.</p>
-      </div>
+      <Tabs
+        items={[
+          { key: 'RB1500', label: 'RB1500', children: <InventoryPanel machine="RB1500" /> },
+          { key: 'NZP360', label: 'NZP360', children: <InventoryPanel machine="NZP360" /> },
+        ]}
+      />
     </PageShell>
   )
 }
