@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
     "antd": "^6.5.0",
+    "qr-scanner": "^1.4.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

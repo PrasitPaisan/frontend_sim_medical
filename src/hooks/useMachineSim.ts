@@ -44,6 +44,44 @@ export type MachineStateResult = {
   queriedAt: string
 }
 
+// Mirrors NZP360 Nursing's <PrescriptionMedicine> fields (ATDPS doc §3.4.3).
+export type NursingMedicineItem = {
+  medbag2DCode?: string
+  deptName?: string
+  deptCode?: string
+  bedNo?: string
+  atfAdministration?: string
+  doctor?: string
+  patientId?: string
+  patientName?: string
+  patientAge?: string
+  orderCode?: string
+  orderText?: string
+  firmName?: string
+  orderUnit?: string
+  typeUnit?: string
+  medNum?: string
+  finishTime?: string
+  doctorName?: string
+  visitId?: string
+}
+
+// Mirrors MachineService.nursingFromNZP360's response shape.
+export type NursingResult = {
+  ok: boolean
+  message: string
+  medications: NursingMedicineItem[]
+  queriedAt: string
+}
+
+// Mirrors MachineService.nursingCodeFromNZP360's response shape.
+export type NursingCodeResult = {
+  ok: boolean
+  message: string
+  nursingCodes: string[]
+  queriedAt: string
+}
+
 export function useMachineSim() {
   const advanceState = async (prescriptionhisid: string, station: number): Promise<AdvanceStateResult> => {
     try {
@@ -189,6 +227,97 @@ export function useMachineSim() {
     }
   }
 
+  // Builds the exact SOAP body queryNursing would transmit, without sending
+  // it — lets the UI show the request before actually hitting the machine,
+  // same preview-before-send pattern as the mutating calls above even though
+  // this one is read-only (see MachineService.buildSoapEnvelopeForNursingPreview).
+  const previewNursing = async (medbag2DCodeParam1: string): Promise<{ ok: true; xml: string } | { ok: false; message: string }> => {
+    try {
+      const result = await api.get<{ xml: string }>(
+        `/machine/nursing-nzp360/preview?medbag2DCodeParam1=${encodeURIComponent(medbag2DCodeParam1)}`,
+      )
+      return { ok: true, xml: result.xml }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to build preview' }
+    }
+  }
+
+  // NZP360's Nursing Interface 1 (ATDPS doc §3.4.3) — given a drug bag's 2D
+  // code (the RCPreId part of KF[MZNO]_[RCPreId], not the full code), returns
+  // every medicine line belonging to it. Read-only, no database write on
+  // either side — see MachineService.nursingFromNZP360. Not yet confirmed
+  // against the real machine.
+  const queryNursing = async (medbag2DCodeParam1: string): Promise<NursingResult> => {
+    try {
+      const result = await api.get<{
+        ok: boolean
+        message?: string
+        medications?: NursingMedicineItem[]
+        queriedAt?: string
+      }>(`/machine/nursing-nzp360?medbag2DCodeParam1=${encodeURIComponent(medbag2DCodeParam1)}`)
+
+      return {
+        ok: result.ok,
+        message: result.message || (result.ok ? 'Fetched medicine lines from machine' : 'Machine rejected the request'),
+        medications: result.medications ?? [],
+        queriedAt: result.queriedAt ?? new Date().toISOString(),
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : 'Failed to reach dispensing machine',
+        medications: [],
+        queriedAt: new Date().toISOString(),
+      }
+    }
+  }
+
+  // Builds the exact SOAP body queryNursingCode would transmit, without
+  // sending it — see previewNursing above for why a read-only call still
+  // gets a preview here.
+  const previewNursingCode = async (
+    medbag2DCodeParam1: string,
+  ): Promise<{ ok: true; xml: string } | { ok: false; message: string }> => {
+    try {
+      const result = await api.get<{ xml: string }>(
+        `/machine/nursing-code-nzp360/preview?medbag2DCodeParam1=${encodeURIComponent(medbag2DCodeParam1)}`,
+      )
+      return { ok: true, xml: result.xml }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to build preview' }
+    }
+  }
+
+  // NZP360's Nursing Interface 2 (ATDPS doc §3.4.4) — same input as
+  // queryNursing above, returns the nursing codes HIS has already provided
+  // for this drug bag. Read-only, no database write on either side — see
+  // MachineService.nursingCodeFromNZP360. Not yet confirmed against the real
+  // machine.
+  const queryNursingCode = async (medbag2DCodeParam1: string): Promise<NursingCodeResult> => {
+    try {
+      const result = await api.get<{
+        ok: boolean
+        message?: string
+        nursingCodes?: string[]
+        queriedAt?: string
+      }>(`/machine/nursing-code-nzp360?medbag2DCodeParam1=${encodeURIComponent(medbag2DCodeParam1)}`)
+
+      return {
+        ok: result.ok,
+        message: result.message || (result.ok ? 'Fetched nursing codes from machine' : 'Machine rejected the request'),
+        nursingCodes: result.nursingCodes ?? [],
+        queriedAt: result.queriedAt ?? new Date().toISOString(),
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : 'Failed to reach dispensing machine',
+        nursingCodes: [],
+        queriedAt: new Date().toISOString(),
+      }
+    }
+  }
+
   return {
     advanceState,
     eliminatePrescription,
@@ -197,5 +326,9 @@ export function useMachineSim() {
     previewConfirmDispensingComplete,
     queryReadyPrescriptions,
     queryMachineState,
+    previewNursing,
+    queryNursing,
+    previewNursingCode,
+    queryNursingCode,
   }
 }

@@ -1,10 +1,11 @@
-import { Button, message, Popconfirm } from 'antd'
-import { ReloadOutlined, WarningFilled, CheckCircleOutlined } from '@ant-design/icons'
+import { Button, message, Popconfirm, Tag } from 'antd'
+import { ReloadOutlined, WarningFilled, CheckCircleOutlined, MedicineBoxOutlined, ScheduleOutlined } from '@ant-design/icons'
 import PageShell from '../components/PageShell'
 import StationActionCard from '../components/machinesim/StationActionCard'
 import MachineActionCard from '../components/machinesim/MachineActionCard'
 import MachineStatusCard from '../components/machinesim/MachineStatusCard'
 import QueryReadyPrescriptionsCard from '../components/machinesim/QueryReadyPrescriptionsCard'
+import NursingQueryCard from '../components/machinesim/NursingQueryCard'
 import { useMachineSim } from '../hooks/useMachineSim'
 import { useBaskets } from '../hooks/useBaskets'
 import { PIPELINE_STATIONS } from '../lib/stations'
@@ -17,6 +18,10 @@ export default function MachineSimPage() {
     confirmDispensingComplete,
     previewConfirmDispensingComplete,
     queryReadyPrescriptions,
+    previewNursing,
+    queryNursing,
+    previewNursingCode,
+    queryNursingCode,
   } = useMachineSim()
   const { baskets, loadBaskets, resetAll } = useBaskets()
 
@@ -86,6 +91,54 @@ export default function MachineSimPage() {
             variant="positive"
             onPreview={previewConfirmDispensingComplete}
             onSubmit={confirmDispensingComplete}
+          />
+        </div>
+      </div>
+
+      <div className="machine-sim-section">
+        <h5 className="machine-sim-section__title">NZP360 Nursing Interface (Untested)</h5>
+        <div className="machine-sim-grid">
+          <NursingQueryCard
+            icon={<MedicineBoxOutlined />}
+            title="Nursing"
+            description="เรียก Nursing ไปที่เครื่อง NZP360 เพื่อดูรายการยาของถุงยาตามโค้ด 2 มิติ (RCPreId) — ยังไม่ได้ทดสอบกับเครื่องจริง"
+            inputPlaceholder="RCPreId (e.g. 1000117420)"
+            onPreview={previewNursing}
+            onQuery={queryNursing}
+            renderResult={(result) =>
+              result.medications.length > 0 ? (
+                <ul className="machine-sim-card__basket-list">
+                  {result.medications.map((med, index) => (
+                    <li key={`${med.orderCode}-${index}`}>
+                      {med.orderText} — {med.orderUnit} × {med.medNum} {med.typeUnit} ({med.patientName}, {med.deptName})
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="machine-sim-card__query-empty">No medicine lines found for this code.</div>
+              )
+            }
+          />
+          <NursingQueryCard
+            icon={<ScheduleOutlined />}
+            title="Nursing Code"
+            description="เรียก NursingCode ไปที่เครื่อง NZP360 เพื่อดูรหัส nursing code ที่ HIS กำหนดไว้สำหรับถุงยานี้ — ยังไม่ได้ทดสอบกับเครื่องจริง"
+            inputPlaceholder="RCPreId (e.g. 1694)"
+            onPreview={previewNursingCode}
+            onQuery={queryNursingCode}
+            renderResult={(result) =>
+              result.nursingCodes.length > 0 ? (
+                <ul className="machine-sim-card__ready-list">
+                  {result.nursingCodes.map((code, index) => (
+                    <li key={`${code}-${index}`}>
+                      <Tag color="purple">{code}</Tag>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="machine-sim-card__query-empty">No nursing codes found for this code.</div>
+              )
+            }
           />
         </div>
       </div>
