@@ -31,6 +31,17 @@ export type QueryPackagedInfoResult = {
 // packaging, then let the pharmacist acknowledge/filter them — see
 // MachineService.queryPackagedInfoFromNZP360/updatePackagedInfoOnNZP360.
 export function usePackagedPouches() {
+  const previewQueryPackagedInfo = async (
+    machineId = 1,
+  ): Promise<{ ok: true; xml: string } | { ok: false; message: string }> => {
+    try {
+      const result = await api.get<{ xml: string }>(`/machine/query-packaged-info-nzp360/preview?machineId=${machineId}`)
+      return { ok: true, xml: result.xml }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Failed to build preview' }
+    }
+  }
+
   const queryPackagedInfo = async (machineId = 1): Promise<QueryPackagedInfoResult> => {
     try {
       const result = await api.get<{
@@ -84,5 +95,5 @@ export function usePackagedPouches() {
     }
   }
 
-  return { queryPackagedInfo, previewUpdatePackagedInfo, updatePackagedInfo }
+  return { previewQueryPackagedInfo, queryPackagedInfo, previewUpdatePackagedInfo, updatePackagedInfo }
 }

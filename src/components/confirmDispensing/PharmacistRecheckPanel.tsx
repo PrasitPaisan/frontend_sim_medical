@@ -1,10 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Modal, Tag, message } from 'antd'
 import { CheckCircleOutlined, CloudDownloadOutlined, WarningFilled } from '@ant-design/icons'
-import PageShell from '../components/PageShell'
-import { useMachineSim } from '../hooks/useMachineSim'
-import { usePharmacistRecheck } from '../hooks/usePharmacistRecheck'
-import { useTrackedPrescriptions } from '../hooks/useTrackedPrescriptions'
+import { useMachineSim } from '../../hooks/useMachineSim'
+import { usePharmacistRecheck } from '../../hooks/usePharmacistRecheck'
+import { useTrackedPrescriptions } from '../../hooks/useTrackedPrescriptions'
 
 // Which real machine action(s) the confirm modal is about to fire —
 // 'both' runs Confirm Dispensing then Eliminate in sequence, one HTTP call
@@ -19,33 +18,62 @@ const ACTION_LABELS: Record<RecheckAction, string> = {
   both: 'Confirm + Eliminate (Full Process)',
 }
 
-export default function PharmacistRecheckPage() {
+export default function PharmacistRecheckPanel() {
   const { queryReadyPrescriptions, previewEliminatePrescription, eliminatePrescription } = useMachineSim()
-  const { previewConfirmRecheck, confirmRecheck } = usePharmacistRecheck()
+  const { previewConfirmRecheck, confirmRecheck, fetchConfirmedPendingIds } = usePharmacistRecheck()
   const { prescriptions: tracked, loadTrackedPrescriptions } = useTrackedPrescriptions()
 
   const [fetching, setFetching] = useState(false)
   const [readyIds, setReadyIds] = useState<string[]>([])
   const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Ids that got "Confirm Dispensing" (UpdateReadyPrescriptionState) but not
+  // Eliminate yet — the basket is still bound. Backed by
+  // prescription_header.recheck_confirmed_at (see
+  // BasketsService.findRecheckConfirmedPendingIds) rather than client-only
+  // state, so it survives a page reload. It's unconfirmed whether the real
+  // RB1500 keeps reporting an acknowledged prescription in its own
+  // QueryReadyPrescription queue, so this list is merged into whatever the
+  // live fetch returns, keeping a confirmed prescription selectable for
+  // Eliminate even if the machine stops reporting it.
+  const [confirmedIds, setConfirmedIds] = useState<string[]>([])
 
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewAction, setPreviewAction] = useState<RecheckAction | null>(null)
   const [previewXmls, setPreviewXmls] = useState<Array<{ label: string; xml: string }> | null>(null)
   const [confirming, setConfirming] = useState(false)
 
+  // Populate any already-confirmed-but-not-eliminated prescriptions on
+  // mount, so they're visible/selectable even before the first live fetch
+  // (and survive a page reload, unlike pure client state).
+  useEffect(() => {
+    void fetchConfirmedPendingIds().then((ids) => {
+      if (ids.length === 0) return
+      setConfirmedIds(ids)
+      setReadyIds((current) => [...current, ...ids.filter((id) => !current.includes(id))])
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleFetch = async () => {
     setFetching(true)
     setSelectedId(null)
     try {
-      const result = await queryReadyPrescriptions()
+      const [result, pendingIds] = await Promise.all([queryReadyPrescriptions(), fetchConfirmedPendingIds()])
       if (!result.ok) {
         message.error(result.message)
         return
       }
-      setReadyIds(result.readyPrescriptionHisIds)
+      // Keep any previously-confirmed-but-not-eliminated ids visible even if
+      // this fetch no longer reports them — see confirmedIds above.
+      setConfirmedIds(pendingIds)
+      const merged = [
+        ...result.readyPrescriptionHisIds,
+        ...pendingIds.filter((id) => !result.readyPrescriptionHisIds.includes(id)),
+      ]
+      setReadyIds(merged)
       setLastFetchedAt(result.queriedAt)
-      if (result.readyPrescriptionHisIds.length === 0) {
+      if (merged.length === 0) {
         message.info('No prescriptions ready on the machine right now')
       }
     } finally {
@@ -120,12 +148,20 @@ export default function PharmacistRecheckPage() {
         message.success(`${hisId}: dispensing confirmed and basket released`)
       }
 
-      // Both actions change pre_state on the backend — drop it from the
-      // ready list and refresh Process Tracking's data so the rest of the
-      // app reflects the new state without a manual page reload.
-      setReadyIds((current) => current.filter((id) => id !== hisId))
+      if (action === 'confirm') {
+        // Only acked so far — basket is still bound, still needs Eliminate.
+        // Keep it visible/selectable (remember it in confirmedIds) instead
+        // of dropping it like a fully-resolved action would.
+        setConfirmedIds((current) => (current.includes(hisId) ? current : [...current, hisId]))
+      } else {
+        // 'eliminate'/'both' fully resolve it — drop from both lists and
+        // refresh Process Tracking's data so the rest of the app reflects
+        // the new state without a manual page reload.
+        setConfirmedIds((current) => current.filter((id) => id !== hisId))
+        setReadyIds((current) => current.filter((id) => id !== hisId))
+        void loadTrackedPrescriptions()
+      }
       setSelectedId(null)
-      void loadTrackedPrescriptions()
     } finally {
       setConfirming(false)
     }
@@ -141,7 +177,7 @@ export default function PharmacistRecheckPage() {
   const selectedTracked = selectedId ? tracked.find((item) => item.prescriptionhisid === selectedId) : undefined
 
   return (
-    <PageShell title="Pharmacist Recheck" subtitle="Confirm dispensing is complete and release the basket, per the real RB1500 workflow">
+    <>
       <div className="machine-sim-card machine-sim-card--wide">
         <div className="machine-sim-card__header">
           <span className="prescription-card__badge">Machine-only</span>
@@ -168,14 +204,17 @@ export default function PharmacistRecheckPage() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {readyIds.map((hisId) => {
               const match = tracked.find((item) => item.prescriptionhisid === hisId)
+              const isConfirmedPending = confirmedIds.includes(hisId)
               return (
                 <Tag
                   key={hisId}
-                  color={selectedId === hisId ? 'orange' : 'blue'}
+                  color={selectedId === hisId ? 'orange' : isConfirmedPending ? 'green' : 'blue'}
                   style={{ cursor: 'pointer', padding: '6px 10px' }}
                   onClick={() => setSelectedId(hisId)}
+                  title={isConfirmedPending ? 'Already confirmed — still needs Eliminate to release the basket' : undefined}
                 >
                   {match?.mzno ?? hisId} {match ? `(${hisId})` : ''}
+                  {isConfirmedPending ? ' — confirmed' : ''}
                 </Tag>
               )
             })}
@@ -243,6 +282,6 @@ export default function PharmacistRecheckPage() {
           </div>
         ))}
       </Modal>
-    </PageShell>
+    </>
   )
 }

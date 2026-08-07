@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { Button, Checkbox, Modal, message } from 'antd'
 import { CheckCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons'
-import PageShell from '../components/PageShell'
-import { usePackagedPouches, type PackagedPouch } from '../hooks/usePackagedPouches'
+import { usePackagedPouches, type PackagedPouch } from '../../hooks/usePackagedPouches'
 
-export default function PackagedPouchesPage() {
-  const { queryPackagedInfo, previewUpdatePackagedInfo, updatePackagedInfo } = usePackagedPouches()
+export default function PackagedPouchesPanel() {
+  const { previewQueryPackagedInfo, queryPackagedInfo, previewUpdatePackagedInfo, updatePackagedInfo } = usePackagedPouches()
 
   const [fetching, setFetching] = useState(false)
   const [pouches, setPouches] = useState<PackagedPouch[]>([])
   const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [fetchRequestXml, setFetchRequestXml] = useState<string | null>(null)
+  const [showFetchRequestXml, setShowFetchRequestXml] = useState(false)
 
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewXml, setPreviewXml] = useState<string | null>(null)
@@ -20,6 +21,11 @@ export default function PackagedPouchesPage() {
     setFetching(true)
     setSelectedIds([])
     try {
+      // Capture the exact QueryPackagedInfo request body sent for this fetch
+      // (read-only, so no confirm step needed — just for visibility/debugging).
+      const preview = await previewQueryPackagedInfo()
+      setFetchRequestXml(preview.ok ? preview.xml : null)
+
       const result = await queryPackagedInfo()
       if (!result.ok) {
         message.error(result.message)
@@ -85,7 +91,7 @@ export default function PackagedPouchesPage() {
   }
 
   return (
-    <PageShell title="Packaged Pouches" subtitle="Check which NZP360 pouches have finished packaging, then filter/acknowledge them">
+    <>
       <div className="machine-sim-card machine-sim-card--wide">
         <div className="machine-sim-card__header">
           <span className="prescription-card__badge">Machine-only</span>
@@ -101,6 +107,11 @@ export default function PackagedPouchesPage() {
           </Button>
           {lastFetchedAt ? (
             <span className="machine-sim-card__query-meta">Last fetched {new Date(lastFetchedAt).toLocaleTimeString()} — {pouches.length} pouch(es)</span>
+          ) : null}
+          {fetchRequestXml ? (
+            <Button size="small" onClick={() => setShowFetchRequestXml(true)}>
+              View request body
+            </Button>
           ) : null}
         </div>
 
@@ -157,6 +168,33 @@ export default function PackagedPouchesPage() {
       </div>
 
       <Modal
+        title="SOAP request body — QueryPackagedInfo"
+        open={showFetchRequestXml}
+        onCancel={() => setShowFetchRequestXml(false)}
+        width={720}
+        footer={[
+          <Button
+            key="copy"
+            onClick={() => {
+              if (!fetchRequestXml) return
+              void navigator.clipboard.writeText(fetchRequestXml).then(
+                () => message.success('SOAP body copied to clipboard'),
+                () => message.error('Failed to copy to clipboard'),
+              )
+            }}
+          >
+            Copy
+          </Button>,
+          <Button key="close" type="primary" onClick={() => setShowFetchRequestXml(false)}>
+            Close
+          </Button>,
+        ]}
+      >
+        <p>This is the exact body sent for the last "Fetch from machine" call (read-only, already executed).</p>
+        <pre className="medicine-preview__xml">{fetchRequestXml}</pre>
+      </Modal>
+
+      <Modal
         title={`Confirm SOAP payload — UpdatePackagedInfo (${selectedIds.length} pouch(es))`}
         open={previewXml !== null}
         onCancel={confirming ? undefined : handleCancelPreview}
@@ -178,6 +216,6 @@ export default function PackagedPouchesPage() {
           Copy
         </Button>
       </Modal>
-    </PageShell>
+    </>
   )
 }

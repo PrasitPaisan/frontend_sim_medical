@@ -35,5 +35,20 @@ export function usePharmacistRecheck() {
     }
   }
 
-  return { previewConfirmRecheck, confirmRecheck }
+  // Prescriptions already acked via Confirm Dispensing but not yet
+  // Eliminated (basket still bound) — see
+  // BasketsService.findRecheckConfirmedPendingIds on the backend. Merge
+  // this into whatever the live QueryReadyPrescription call returns so a
+  // confirmed prescription stays selectable even if the real machine stops
+  // reporting it as ready after acknowledgment.
+  const fetchConfirmedPendingIds = async (): Promise<string[]> => {
+    try {
+      const result = await api.get<{ ids: string[] }>('/machine/recheck-confirmed-pending')
+      return result.ids ?? []
+    } catch {
+      return []
+    }
+  }
+
+  return { previewConfirmRecheck, confirmRecheck, fetchConfirmedPendingIds }
 }

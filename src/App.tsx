@@ -8,7 +8,6 @@ import {
   DashboardOutlined,
   ExperimentOutlined,
   FormOutlined,
-  InboxOutlined,
   MedicineBoxOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -27,9 +26,8 @@ import AddMedicinePage from './pages/AddMedicinePage'
 import PrescribeMedicinePage from './pages/PrescribeMedicinePage'
 import AddDepartmentPage from './pages/AddDepartmentPage'
 import CobotTaskPage from './pages/CobotTaskPage'
-import PharmacistRecheckPage from './pages/PharmacistRecheckPage'
+import ConfirmDispensingPage from './pages/ConfirmDispensingPage'
 import QueryBasketPage from './pages/QueryBasketPage'
-import PackagedPouchesPage from './pages/PackagedPouchesPage'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -79,12 +77,10 @@ function App() {
         return <MachineSimPage />
       case 'cobot-task':
         return <CobotTaskPage />
-      case 'pharmacist-recheck':
-        return <PharmacistRecheckPage />
+      case 'confirm-dispensing':
+        return <ConfirmDispensingPage />
       case 'query-basket':
         return <QueryBasketPage />
-      case 'packaged-pouches':
-        return <PackagedPouchesPage />
       case 'add-medicine':
         return <AddMedicinePage />
       case 'add-department':
@@ -157,9 +153,8 @@ function App() {
               { key: 'inventory', icon: <ToolOutlined />, label: 'Machine Inventory' },
               { key: 'machine-sim', icon: <ApiOutlined />, label: 'Machine Sim' },
               { key: 'cobot-task', icon: <RobotOutlined />, label: 'COBOT Task Management' },
-              { key: 'pharmacist-recheck', icon: <SafetyCertificateOutlined />, label: 'Pharmacist Recheck' },
+              { key: 'confirm-dispensing', icon: <SafetyCertificateOutlined />, label: 'Confirm Dispensing' },
               { key: 'query-basket', icon: <BulbOutlined />, label: 'Query Basket' },
-              { key: 'packaged-pouches', icon: <InboxOutlined />, label: 'Packaged Pouches (NZP360)' },
               { key: 'add-medicine', icon: <MedicineBoxOutlined />, label: 'Add Medicine to Machine' },
               { key: 'add-department', icon: <ApartmentOutlined />, label: 'Add Department' },
             ]}
@@ -187,6 +182,7 @@ function App() {
                 {activePage === 'process' && 'Process Tracking'}
                 {activePage === 'inventory' && 'Machine Inventory'}
                 {activePage === 'machine-sim' && 'Machine Sim'}
+                {activePage === 'confirm-dispensing' && 'Confirm Dispensing'}
                 {activePage === 'add-medicine' && 'Add Medicine to Machine'}
                 {activePage === 'add-department' && 'Add Department'}
               </Title>

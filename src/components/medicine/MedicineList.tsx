@@ -1,4 +1,5 @@
-import { Table, Tag } from 'antd'
+import { Input, Table, Tag } from 'antd'
+import { useMemo, useState } from 'react'
 import type { Key } from 'react'
 import type { Medicine } from '../../hooks/useMedicines'
 import { getDispenseTypeColor } from '../../lib/dispenseType'
@@ -70,23 +71,51 @@ const columns = [
 ]
 
 export default function MedicineList({ medicines, loading, selectedRowKeys, onSelectionChange }: MedicineListProps) {
+  const [searchText, setSearchText] = useState('')
+
+  const filteredMedicines = useMemo(() => {
+    const query = searchText.trim().toLowerCase()
+    if (!query) return medicines
+    return medicines.filter((medicine) =>
+      [
+        medicine.medicinehisid,
+        medicine.medicinenamech,
+        medicine.medicinenameen,
+        medicine.pycode,
+        medicine.medfactoryname,
+        medicine.med_batch,
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(query)),
+    )
+  }, [medicines, searchText])
+
   return (
-    <Table
-      rowKey="id"
-      loading={loading}
-      dataSource={medicines}
-      columns={columns}
-      pagination={{ pageSize: 10 }}
-      locale={{ emptyText: 'No medicines added to the machine yet' }}
-      scroll={{ x: 'max-content' }}
-      rowSelection={
-        onSelectionChange
-          ? {
-              selectedRowKeys,
-              onChange: (keys, rows) => onSelectionChange(keys, rows),
-            }
-          : undefined
-      }
-    />
+    <>
+      <Input.Search
+        allowClear
+        placeholder="Search by name, HIS ID, factory, pycode, or batch"
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        style={{ marginBottom: 12, maxWidth: 420 }}
+      />
+      <Table
+        rowKey="id"
+        loading={loading}
+        dataSource={filteredMedicines}
+        columns={columns}
+        pagination={{ pageSize: 10 }}
+        locale={{ emptyText: searchText ? 'No medicines match your search' : 'No medicines added to the machine yet' }}
+        scroll={{ x: 'max-content' }}
+        rowSelection={
+          onSelectionChange
+            ? {
+                selectedRowKeys,
+                onChange: (keys, rows) => onSelectionChange(keys, rows),
+              }
+            : undefined
+        }
+      />
+    </>
   )
 }
