@@ -23,11 +23,13 @@ const MOCK_PERFORM_FREQS: Array<{ detail: string; freq: string; print: string }>
 
 const randomItem = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)]
 const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
-// DOSAGE_PER_UNIT is a fraction of dosageunit per dose (1 = whole tablet,
-// 0.5 = half) — most real orders are whole tablets, so this mostly returns
-// 1 with an occasional half, rather than a uniform random fraction that
-// would make "half a tablet" the common case.
-const randomDosagePerUnit = () => (Math.random() < 0.85 ? '1.0' : '0.5')
+// DOSAGE carries the per-administration amount, including any tablet
+// fraction (1/2 = whole tablets, 0.5 = half) — confirmed 2026-08-10 that
+// DOSAGE_PER_UNIT is NOT where the fraction goes (it's always 1.0). Most
+// real orders are whole tablets, so this mostly returns 1-2 with an
+// occasional half, rather than a uniform random fraction that would make
+// "half a tablet" the common case.
+const randomDosage = () => (Math.random() < 0.85 ? String(randomInt(1, 2)) : '0.5')
 const pad2 = (value: number) => String(value).padStart(2, '0')
 const randomClockTime = () => `${pad2(randomInt(0, 23))}:${pad2(randomInt(0, 59))}:${pad2(randomInt(0, 59))}`
 // Matches the sample envelope's odd date+time format (e.g. "2017032909:44:30"
@@ -174,19 +176,20 @@ export default function PrescriptionOrderForm({
   }
 
   // Suggests Total Quantity from Dosage × doses/day (parsed from Perform
-  // Freq Detail) × Repeat Indicator (days ordered) — a convenience, not a
-  // forced value, since the frequency-string parsing is best-effort (see
-  // lib/quantity.ts) and can't cover every DB usage code.
+  // Freq Detail) — one day's worth. Not × Repeat Indicator: that field is a
+  // 0/1 long-term-vs-temporary flag, not a day count (corrected 2026-08-11,
+  // see CLAUDE.md) — a convenience, not a forced value, since the
+  // frequency-string parsing is best-effort (see lib/quantity.ts) and can't
+  // cover every DB usage code.
   const handleSuggestQuantity = (rowIndex: number) => {
     const drugs = form.getFieldValue('drugs') as DrugRow[]
     const row = drugs?.[rowIndex]
-    const repeatindicator = form.getFieldValue('repeatindicator') as string | undefined
     const dosage = row?.dosage ? Number(row.dosage) : undefined
-    const suggested = computeSuggestedTotalQuantity(dosage, row?.performfreqdetail, repeatindicator)
+    const suggested = computeSuggestedTotalQuantity(dosage, row?.performfreqdetail)
 
     if (suggested === undefined) {
       message.warning(
-        'Cannot suggest a quantity — need Dosage, a parseable Perform Freq Detail (e.g. 8-20, qd, qn), and Repeat Indicator (days) all filled in for this row.',
+        'Cannot suggest a quantity — need Dosage and a parseable Perform Freq Detail (e.g. 8-20, qd, qn) filled in for this row.',
       )
       return
     }
@@ -245,9 +248,9 @@ export default function PrescriptionOrderForm({
         medicinehint: randomItem(MOCK_HINTS),
         drugspec: medicine.medicineunit,
         drugpycode: medicine.pycode,
-        dosage: String(randomInt(1, 2)),
+        dosage: randomDosage(),
         dosageunit: randomItem(MOCK_DOSAGE_UNITS),
-        dosageperunit: randomDosagePerUnit(),
+        dosageperunit: '1.0',
         dispensingtime: randomDateTimeStamp(),
         performtime: randomDateTimeStamp(),
         performfreqdetail: freq.detail,
@@ -540,13 +543,13 @@ export default function PrescriptionOrderForm({
                   <Form.Item name={[name, 'drugpycode']} label="Drug PY Code" style={{ flex: '1 1 120px' }}>
                     <Input placeholder="dxsyslzh" />
                   </Form.Item>
-                  <Form.Item name={[name, 'dosage']} label="Dosage" style={{ flex: '1 1 100px' }}>
+                  <Form.Item name={[name, 'dosage']} label="Dosage (1 = whole tablet, 0.5 = half)" style={{ flex: '1 1 100px' }}>
                     <Input placeholder="1.0" />
                   </Form.Item>
                   <Form.Item name={[name, 'dosageunit']} label="Dosage Unit" style={{ flex: '1 1 100px' }}>
                     <Input placeholder="Tablet" />
                   </Form.Item>
-                  <Form.Item name={[name, 'dosageperunit']} label="Dosage Per Unit (1 = whole, 0.5 = half)" style={{ flex: '1 1 120px' }}>
+                  <Form.Item name={[name, 'dosageperunit']} label="Dosage Per Unit (always 1.0)" style={{ flex: '1 1 120px' }}>
                     <Input placeholder="1.0" />
                   </Form.Item>
                   <Form.Item name={[name, 'dispensingtime']} label="Dispensing Time" style={{ flex: '1 1 160px' }}>

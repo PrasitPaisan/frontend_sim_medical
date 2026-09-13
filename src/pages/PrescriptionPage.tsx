@@ -71,6 +71,8 @@ export default function PrescriptionPage() {
     setPage,
     nzp360SentOnly,
     setNzp360SentOnly,
+    search,
+    setSearch,
     selectedId,
     setSelectedId,
     loading,
@@ -305,6 +307,8 @@ export default function PrescriptionPage() {
         selecting={selecting}
         nzp360SentOnly={nzp360SentOnly}
         onToggleNzp360SentOnly={setNzp360SentOnly}
+        search={search}
+        onSearch={setSearch}
       />
 
       <Modal

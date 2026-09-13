@@ -1,4 +1,9 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
+// Defaults to the relative '/api' path — Vite's dev server proxy
+// (vite.config.ts) forwards this to backend-sim, stripping the prefix, so
+// requests stay same-origin and never hit CORS. Override via
+// VITE_API_BASE_URL only if pointing somewhere other than the proxied dev
+// backend (e.g. a deployed API without the dev proxy in front of it).
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT || 10000)
 
 interface RequestOptions extends RequestInit {

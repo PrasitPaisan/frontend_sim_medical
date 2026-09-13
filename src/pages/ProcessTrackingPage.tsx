@@ -90,7 +90,7 @@ export default function ProcessTrackingPage() {
         <div className="prescription-empty">No ordered prescriptions to track yet.</div>
       ) : null}
 
-      <div className="prescription-list">
+      <div className="tracking-grid">
         {prescriptions.map((item) => (
           <TrackingCard key={item.id} item={item} livePosition={livePositions[item.prescriptionhisid]} />
         ))}

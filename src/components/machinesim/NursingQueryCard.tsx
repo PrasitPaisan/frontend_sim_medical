@@ -85,13 +85,14 @@ export default function NursingQueryCard<T extends NursingQueryResultBase>({
     )
   }
 
-  // Scanned QR carries the drug bag's full 2D code (KF[MZNO]_[RCPreId]) —
-  // extractRCPreId pulls out just the part the Nursing/NursingCode
-  // interfaces want, same as if the RCPreId had been typed in directly.
+  // Scanned code (QR or barcode — see QrScanModal) carries the drug bag's
+  // full 2D code (KF[MZNO]_[RCPreId]) — extractRCPreId pulls out just the
+  // part the Nursing/NursingCode interfaces want, same as if the RCPreId
+  // had been typed in directly.
   const handleScan = useCallback((rawText: string) => {
     setCodeInput(extractRCPreId(rawText))
     setScanOpen(false)
-    message.success('QR code scanned')
+    message.success('Code scanned')
   }, [])
 
   return (

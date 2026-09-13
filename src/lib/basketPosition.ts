@@ -3,14 +3,19 @@
 // lib/stations.ts), so this is kept as its own separate lookup rather than
 // merged into PIPELINE_STATIONS. This is "what the real machine says right
 // now", shown alongside (not instead of) the simulated station stepper.
-// Confirmed range is 1-5 only — the machine does not report Idle (0) or
-// End (6) at all, so neither is a real Position value to expect back.
+// Confirmed range is 1-6 — the machine does not report Idle (0) at all.
+// Position 6 is labeled "Pharmacist recheck" by the real machine (previously
+// guessed as generic "End") but still only means the basket has physically
+// arrived at the recheck point, NOT that the pharmacist has verified it —
+// same distinction as 'recheck-arrived' (6) vs 'pharmacist-recheck' (7) in
+// lib/stations.ts, so it must not be treated as completion on its own.
 const BASKET_POSITION_LABELS: Record<number, string> = {
   1: 'Binding card position',
   2: 'Manual replenishment position',
   3: 'NZP360 dispensing position',
   4: 'T type exit',
   5: 'COBOT dispensing position',
+  6: 'Pharmacist recheck',
 }
 
 export function getBasketPositionLabel(position: number | undefined): string {
@@ -22,16 +27,16 @@ export function getBasketPositionLabel(position: number | undefined): string {
 // station_status, used to auto-advance the stepper after a live fetch —
 // deliberately partial: Position 4 (T type exit) has no station_status
 // equivalent, so it stays display-only (see PIPELINE_STATIONS in
-// lib/stations.ts). Now that Position 6 (End) is confirmed not to exist on
-// the real machine, there is no live signal left that maps to
-// 'recheck-arrived' (6) or beyond — reaching/verifying the recheck point
-// still has to be advanced manually (Machine Sim) or via the Confirm
-// Dispensing flow, not from a live basket-position fetch.
+// lib/stations.ts). Position 6 ("Pharmacist recheck") maps to
+// 'recheck-arrived' (6), NOT 'pharmacist-recheck' (7) — reaching the
+// recheck point physically isn't the same as the pharmacist having
+// actually verified it, so it must not trigger completion on its own.
 const POSITION_TO_STATION_STATUS: Record<number, number> = {
   1: 2, // Binding card position -> Box Dispensing Machine
   2: 3, // Manual replenishment position -> Manual Dispensing Point
   3: 4, // NZP360 dispensing position -> Loose Tablet Dispensing Machine
   5: 5, // COBOT dispensing position -> COBOT
+  6: 6, // Pharmacist recheck -> Arrived at Recheck Point
 }
 
 export function mapPositionToStationStatus(position: number | undefined): number | null {

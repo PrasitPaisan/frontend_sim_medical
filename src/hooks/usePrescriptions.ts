@@ -62,6 +62,11 @@ export function usePrescriptions() {
   // (nzp360_sent_at set) but still waiting on RB1500 — see
   // PrescriptionsService.findAll's nzp360SentOnly param.
   const [nzp360SentOnly, setNzp360SentOnly] = useState(false)
+  // Matches against patientname/mzno/prescriptionhisid/prescriptiondoctorname/
+  // departmentname server-side (see PrescriptionsService.findAll) — this is
+  // a full-dataset search, not a client-side filter of the current page,
+  // since the queue can span many pages of test data.
+  const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,6 +74,7 @@ export function usePrescriptions() {
   const nextFetchAtRef = useRef<number>(Date.now() + 120_000)
   const pageRef = useRef(page)
   const nzp360SentOnlyRef = useRef(nzp360SentOnly)
+  const searchRef = useRef(search)
 
   useEffect(() => {
     pageRef.current = page
@@ -77,6 +83,10 @@ export function usePrescriptions() {
   useEffect(() => {
     nzp360SentOnlyRef.current = nzp360SentOnly
   }, [nzp360SentOnly])
+
+  useEffect(() => {
+    searchRef.current = search
+  }, [search])
 
   const resetTimer = () => {
     nextFetchAtRef.current = Date.now() + 120_000
@@ -88,8 +98,11 @@ export function usePrescriptions() {
     setError(null)
 
     try {
+      const searchParam = searchRef.current.trim()
       const data = await api.get<PrescriptionListResponse>(
-        `/prescriptions?page=${pageRef.current}&pageSize=${PAGE_SIZE}&nzp360SentOnly=${nzp360SentOnlyRef.current}`,
+        `/prescriptions?page=${pageRef.current}&pageSize=${PAGE_SIZE}&nzp360SentOnly=${nzp360SentOnlyRef.current}${
+          searchParam ? `&search=${encodeURIComponent(searchParam)}` : ''
+        }`,
       )
 
       setPrescriptions(data.items)
@@ -159,6 +172,18 @@ export function usePrescriptions() {
     }
   }
 
+  // Same "jump back to page 1" treatment as the nzp360SentOnly toggle above
+  // — a new search term may not exist at all on the previously-viewed page.
+  const setSearchFiltered = (value: string) => {
+    setSearch(value)
+    searchRef.current = value
+    if (page === 1) {
+      void loadPrescriptions()
+    } else {
+      setPage(1)
+    }
+  }
+
   const selectedPrescription = useMemo(
     () => prescriptions.find((item) => item.id === selectedId) ?? null,
     [prescriptions, selectedId],
@@ -189,6 +214,8 @@ export function usePrescriptions() {
     setPage,
     nzp360SentOnly,
     setNzp360SentOnly: setNzp360SentOnlyFiltered,
+    search,
+    setSearch: setSearchFiltered,
     selectedId,
     setSelectedId,
     selectedPrescription,

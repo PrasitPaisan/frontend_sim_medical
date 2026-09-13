@@ -190,22 +190,6 @@ body {
     font-size: 20px;
   }
 
-  /* Each step's flex: 1 (below) shrinks down to its label's min-content —
-     with 6+ pipeline stations that's still wider than a phone screen, and
-     since this sits inside body's overflow-x: hidden, it was silently
-     clipping the last station(s) instead of scrolling to them. Let it
-     scroll horizontally on its own instead, with steps at a fixed readable
-     width rather than being squeezed. */
-  .station-stepper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 10px;
-  }
-
-  .station-stepper__step {
-    flex: 0 0 auto;
-    min-width: 92px;
-  }
 }
 
 .page-shell {
@@ -363,6 +347,16 @@ body {
   gap: 12px;
 }
 
+/* Process Tracking's grid layout — safe to go multi-column here (unlike
+   .prescription-list above) since TrackingCard no longer renders the wide
+   StationStepper that caused that grid-blowout fix to be needed. */
+.tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
 .prescription-card {
   border: 1px solid #e3ebf0;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
@@ -475,6 +469,21 @@ body {
   gap: 8px;
 }
 
+.nursing-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.nursing-result__patient :where(.ant-descriptions-item-label) {
+  width: 140px;
+}
+
+.nursing-result__drugs {
+  margin-top: 0;
+}
+
 .prescription-send__controls {
   display: flex;
   align-items: center;
@@ -514,140 +523,6 @@ body {
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
-}
-
-.station-stepper {
-  display: flex;
-  align-items: flex-start;
-  margin-top: 14px;
-  padding: 16px 4px;
-}
-
-.station-stepper__step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  text-align: center;
-}
-
-.station-stepper__node-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  width: 100%;
-}
-
-.station-stepper__node {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 13px;
-  font-weight: 600;
-  border: 2px solid #dce7ee;
-  background: #ffffff;
-  color: #6c7d8a;
-}
-
-.station-stepper__node--done {
-  border-color: #3874FF;
-  background: #3874FF;
-  color: #fff;
-}
-
-.station-stepper__node--active {
-  border-color: #3874FF;
-  color: #3874FF;
-  animation: station-pulse 1.6s ease-out infinite;
-}
-
-@keyframes station-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(56, 116, 255, 0.35);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(56, 116, 255, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(56, 116, 255, 0);
-  }
-}
-
-.station-stepper__connector {
-  position: relative;
-  height: 2px;
-  background: #dce7ee;
-}
-
-.station-stepper__connector--hidden {
-  background: transparent;
-}
-
-.station-stepper__connector--done {
-  background: #3874FF;
-}
-
-/* Basket "in transit" toward the next station. This connector div is only
-   half the gap between two node centers (each step has its own left/right
-   half, split so the node stays centered) — so the icon has to travel 200%
-   of *this* connector's width, not 100%, to actually reach the next node
-   instead of stalling at the midpoint. Nothing here clips overflow, so it's
-   free to visually cross into the node and the next step's connector. */
-.station-stepper__basket-icon {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  display: flex;
-  transform: translate(-50%, -50%);
-  animation: station-basket-flow 6s ease-in-out infinite;
-  pointer-events: none;
-  filter: drop-shadow(0 1px 2px rgba(56, 116, 255, 0.25));
-}
-
-@keyframes station-basket-flow {
-  0% {
-    left: 0%;
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    left: 200%;
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .station-stepper__node--active {
-    animation: none;
-  }
-  .station-stepper__basket-icon {
-    animation: none;
-    left: 100%;
-    opacity: 1;
-  }
-}
-
-.station-stepper__label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: #42515e;
-  padding: 0 6px;
-}
-
-.station-stepper__label span {
-  color: #6c7d8a;
 }
 
 .machine-sim-toolbar {

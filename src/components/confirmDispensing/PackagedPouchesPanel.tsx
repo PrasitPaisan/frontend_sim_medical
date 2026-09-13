@@ -45,6 +45,12 @@ export default function PackagedPouchesPanel() {
     setSelectedIds((current) => (checked ? [...current, packId] : current.filter((id) => id !== packId)))
   }
 
+  const allPackIds = pouches.map((p) => p.packId ?? '').filter(Boolean)
+  const allSelected = allPackIds.length > 0 && selectedIds.length === allPackIds.length
+  const handleToggleSelectAll = () => {
+    setSelectedIds(allSelected ? [] : allPackIds)
+  }
+
   const handleOpenPreview = async () => {
     if (selectedIds.length === 0) return
     setPreviewLoading(true)
@@ -105,6 +111,9 @@ export default function PackagedPouchesPanel() {
           <Button icon={<CloudDownloadOutlined />} onClick={() => void handleFetch()} loading={fetching}>
             Fetch from machine
           </Button>
+          {pouches.length > 0 ? (
+            <Button onClick={handleToggleSelectAll}>{allSelected ? 'Deselect All' : `Select All (${pouches.length})`}</Button>
+          ) : null}
           {lastFetchedAt ? (
             <span className="machine-sim-card__query-meta">Last fetched {new Date(lastFetchedAt).toLocaleTimeString()} — {pouches.length} pouch(es)</span>
           ) : null}

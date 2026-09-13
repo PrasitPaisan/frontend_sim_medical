@@ -6,6 +6,7 @@ import MachineActionCard from '../components/machinesim/MachineActionCard'
 import MachineStatusCard from '../components/machinesim/MachineStatusCard'
 import QueryReadyPrescriptionsCard from '../components/machinesim/QueryReadyPrescriptionsCard'
 import NursingQueryCard from '../components/machinesim/NursingQueryCard'
+import NursingResultView from '../components/machinesim/NursingResultView'
 import { useMachineSim } from '../hooks/useMachineSim'
 import { useBaskets } from '../hooks/useBaskets'
 import { PIPELINE_STATIONS } from '../lib/stations'
@@ -105,19 +106,7 @@ export default function MachineSimPage() {
             inputPlaceholder="RCPreId (e.g. 1000117420)"
             onPreview={previewNursing}
             onQuery={queryNursing}
-            renderResult={(result) =>
-              result.medications.length > 0 ? (
-                <ul className="machine-sim-card__basket-list">
-                  {result.medications.map((med, index) => (
-                    <li key={`${med.orderCode}-${index}`}>
-                      {med.orderText} — {med.orderUnit} × {med.medNum} {med.typeUnit} ({med.patientName}, {med.deptName})
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="machine-sim-card__query-empty">No medicine lines found for this code.</div>
-              )
-            }
+            renderResult={(result) => <NursingResultView medications={result.medications} />}
           />
           <NursingQueryCard
             icon={<ScheduleOutlined />}

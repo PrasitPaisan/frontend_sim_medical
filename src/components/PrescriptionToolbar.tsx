@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, InputNumber, Pagination } from 'antd'
+import { Button, Input, InputNumber, Pagination } from 'antd'
 
 const SELECT_PRESETS = [20, 50, 100]
 
@@ -19,6 +19,8 @@ type PrescriptionToolbarProps = {
   selecting: boolean
   nzp360SentOnly: boolean
   onToggleNzp360SentOnly: (value: boolean) => void
+  search: string
+  onSearch: (value: string) => void
 }
 
 export default function PrescriptionToolbar({
@@ -37,8 +39,14 @@ export default function PrescriptionToolbar({
   selecting,
   nzp360SentOnly,
   onToggleNzp360SentOnly,
+  search,
+  onSearch,
 }: PrescriptionToolbarProps) {
   const [customN, setCustomN] = useState<number | null>(null)
+  // Local display value so typing doesn't fire a request on every
+  // keystroke — the actual search only runs on Enter/the search icon
+  // (Input.Search's onSearch), or on Clear.
+  const [searchDraft, setSearchDraft] = useState(search)
 
   return (
     <div className="prescription-toolbar">
@@ -54,6 +62,14 @@ export default function PrescriptionToolbar({
         ) : null}
       </div>
       <div className="prescription-toolbar__actions">
+        <Input.Search
+          allowClear
+          placeholder="Search by patient, MZ no., HIS id, doctor, or department"
+          value={searchDraft}
+          onChange={(e) => setSearchDraft(e.target.value)}
+          onSearch={(value) => onSearch(value)}
+          style={{ maxWidth: 360 }}
+        />
         <Button className="prescription-toolbar__button" onClick={onRefresh} loading={loading}>
           Refresh now
         </Button>

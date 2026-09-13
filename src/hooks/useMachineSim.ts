@@ -44,19 +44,21 @@ export type MachineStateResult = {
   queriedAt: string
 }
 
-// Mirrors NZP360 Nursing's <PrescriptionMedicine> fields (ATDPS doc §3.4.3).
+// Mirrors NZP360 Nursing's <PrescriptionMedicine> fields (ATDPS doc §3.4.3) —
+// field names confirmed 2026-08-11 against a real captured response, see the
+// matching note on NursingPrescriptionMedicineItem in machine.service.ts.
 export type NursingMedicineItem = {
   medbag2DCode?: string
   deptName?: string
   deptCode?: string
-  bedNo?: string
-  atfAdministration?: string
+  patientBed?: string
+  preAdministration?: string
   doctor?: string
   patientId?: string
   patientName?: string
   patientAge?: string
-  orderCode?: string
-  orderText?: string
+  drugCode?: string
+  drugText?: string
   firmName?: string
   orderUnit?: string
   typeUnit?: string
@@ -64,6 +66,10 @@ export type NursingMedicineItem = {
   finishTime?: string
   doctorName?: string
   visitId?: string
+  orderNo?: string
+  hisMainId?: string
+  nursingCode?: string
+  nursingReserved?: string
 }
 
 // Mirrors MachineService.nursingFromNZP360's response shape.

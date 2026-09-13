@@ -34,20 +34,21 @@ export function countDosesPerDay(performfreqdetail: string | undefined): number 
   return undefined
 }
 
-// total quantity (hpmtypeunit) = dosage per administration × doses/day ×
-// days ordered (repeatindicator) — e.g. dosage=2, freq="8-12" (2x/day),
-// repeatindicator="5" days -> 2*2*5 = 20. Returns undefined (not 0 or a
-// guess) whenever any input can't be determined, so the caller knows to
-// fall back to manual entry instead of silently suggesting a wrong number.
+// total quantity (hpmtypeunit) = dosage per administration × doses/day —
+// e.g. dosage=1, freq="08:00-14:00-20:00" (3x/day) -> 1*3 = 3. One day's
+// worth only: `repeatindicator` is NOT a day count (corrected 2026-08-11 —
+// it's a 0/1 long-term-vs-temporary flag, see CLAUDE.md), so it no longer
+// factors into this formula at all — an earlier version of this function
+// multiplied by `repeatindicator` as if it were days, which is wrong.
+// Returns undefined (not 0 or a guess) whenever an input can't be
+// determined, so the caller knows to fall back to manual entry instead of
+// silently suggesting a wrong number.
 export function computeSuggestedTotalQuantity(
   dosage: number | undefined,
   performfreqdetail: string | undefined,
-  repeatindicator: string | undefined,
 ): number | undefined {
   if (!dosage || dosage <= 0) return undefined
   const dosesPerDay = countDosesPerDay(performfreqdetail)
   if (!dosesPerDay) return undefined
-  const days = Number(repeatindicator)
-  if (!Number.isFinite(days) || days <= 0) return undefined
-  return dosage * dosesPerDay * days
+  return dosage * dosesPerDay
 }
